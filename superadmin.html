@@ -1,0 +1,2005 @@
+<!doctype html>
+<html lang="ko" data-theme="auto">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Looma — Super Admin</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Peta:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet"/>
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0A0A0A">
+  <script>
+    (function(){
+      try{
+        const root = document.documentElement;
+        let theme = localStorage.getItem('looma:theme');
+        if(theme!=='light' && theme!=='dark') theme='auto';
+        if(theme==='auto'){ root.removeAttribute('data-theme'); }
+        else{ root.setAttribute('data-theme', theme); }
+        root.dataset.themePreference = theme;
+      }catch(err){
+        /* ignore */
+      }
+    })();
+  </script>
+  <script src="theme.js" defer></script>
+  <script src="notify-badge.js" defer></script>
+
+  <style>
+    :root{
+      --bg:#0A0A0A; --surface:#111213; --elev:#151618; --line:#1E2023;
+      --text:#EDEFF2; --muted:#9AA3AE; --brand:#0EA5E9; --warn:#F59E0B; --danger:#ef4444;
+      --radius:12px; --shadow:0 6px 16px rgba(0,0,0,.16); --speed:.18s;
+      --dock-h:64px; --footer-h:44px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    :root[data-theme="light"]{
+      --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+      --text:#0B1220; --muted:#596174; --brand:#0077FF; --warn:#B45309; --danger:#DC2626;
+      --shadow:0 10px 20px rgba(10,16,30,.06);
+    }
+    @media (prefers-color-scheme: light){
+      :root:not([data-theme="dark"]):not([data-theme="light"]){
+        --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+        --text:#0B1220; --muted:#596174; --brand:#0077FF; --warn:#B45309; --danger:#DC2626;
+        --shadow:0 10px 20px rgba(10,16,30,.06);
+      }
+    }
+    *{ box-sizing:border-box }
+    html, body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    a{ color:inherit; text-decoration:none }
+    button{ font:inherit; background:none; border:0; color:inherit; cursor:pointer }
+    input, select, textarea{
+      color:inherit; background:var(--elev); border:1px solid var(--line);
+      border-radius:10px; padding:10px 12px;
+    }
+    textarea{ min-height:120px; resize:vertical }
+    .hidden{ display:none !important }
+
+    .app{ min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
+
+    /* Top (mobile) */
+    .m-top{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-bottom:1px solid var(--line); background:var(--surface);
+      position:sticky; top:0; z-index:20;
+    }
+    .m-left{ display:flex; align-items:center; gap:10px }
+    .m-center{ position:absolute; left:50%; transform:translateX(-50%); pointer-events:none }
+    .m-right{ display:flex; align-items:center; gap:8px }
+    .brand{ font-family:"Lexend Peta"; font-weight:800; letter-spacing:.4px }
+    .avatar{ width:28px; height:28px; border-radius:50%; background:#D1D5DB; flex:0 0 28px; display:flex; align-items:center; justify-content:center; font-weight:700 }
+    .icon-btn{
+      width:32px; height:32px; border-radius:50%; border:1px solid var(--line); background:var(--elev);
+      display:inline-flex; align-items:center; justify-content:center; transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .icon-btn:hover{ background:var(--brand); border-color:transparent; color:#fff; transform:translateY(-1px) }
+    .icon-btn i{ font-size:16px }
+    .notif-nav{ position:relative }
+    .notif-badge{
+      position:absolute; top:-4px; right:-4px; min-width:16px; height:16px; padding:0 4px;
+      border-radius:999px; background:#ef4444; color:#fff; font-size:10px; font-weight:700;
+      display:flex; align-items:center; justify-content:center; line-height:1;
+    }
+    .notif-badge.hidden{ display:none !important }
+    @media (min-width:1024px){ .m-top{ display:none } }
+
+    /* Main Grid */
+    .main{ display:grid; gap:16px; grid-template-columns:1fr; padding:16px }
+    @media (min-width:1024px){ .main{ grid-template-columns:260px 1fr 360px; padding-bottom:calc(var(--footer-h) + 8px) } }
+    .container{ width:100% }
+
+    /* Sidebar */
+    .sidebar{ display:none }
+    @media (min-width:1024px){
+      .sidebar{
+        display:flex; flex-direction:column; gap:14px; border-right:1px solid var(--line); padding:20px 12px 20px 0;
+      }
+      .side-head{ padding:0 8px }
+      .side-brand{ font-family:"Lexend Peta"; font-weight:800; font-size:18px }
+      .me-card{
+        display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--line); border-radius:12px; background:var(--surface);
+        background-image: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.03));
+      }
+      .me-card .name{ font-weight:600 } .me-card .id{ color:var(--muted); font-size:12px }
+
+      .nav{ display:flex; flex-direction:column; gap:6px; margin-top:4px }
+      .nav a{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; border:1px solid transparent; transition: background var(--speed), border-color var(--speed) }
+      .nav a:hover{ background:var(--elev); border-color:var(--line) }
+      .nav a.active{ background:var(--elev); border-color:var(--line) }
+      .nav .icon{ font-size:18px } .nav .label{ font-weight:600 }
+    }
+
+    /* Right rail */
+    .rrail{ display:none }
+    @media (min-width:1024px){
+      .rrail{ display:flex; flex-direction:column; gap:12px }
+      .card{ border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:12px }
+      .metric{ display:grid; grid-template-columns:1fr auto; gap:6px; padding:8px 10px; border:1px dashed var(--line); border-radius:10px }
+      .muted{ color:var(--muted) }
+    }
+
+    /* Footer */
+    .footer{
+      position:fixed; left:0; right:0; bottom:0; height:var(--footer-h);
+      border-top:1px solid var(--line); background:var(--surface); color:#9AA3AE; z-index:50;
+    }
+    .footer .row{ max-width:1920px; margin:0 auto; height:100%; padding:0 16px; display:flex; align-items:center; justify-content:space-between; gap:12px }
+    @media (max-width:1023.98px){ .footer{ display:none } }
+
+    /* Mobile Dock */
+    .dock{ display:none }
+    @media (max-width:1023.98px){
+      .dock{
+        display:block;
+        position:fixed; left:0; right:0; bottom:0;
+        z-index:60;
+        height:var(--dock-h);
+        padding-bottom:var(--safe-bottom);
+        border-top:1px solid var(--line);
+        background:rgba(10,11,14,.92);
+        color:var(--muted);
+        box-shadow:0 -10px 26px rgba(0,0,0,.35);
+        backdrop-filter:blur(18px) saturate(160%);
+        -webkit-backdrop-filter:blur(18px) saturate(160%);
+        transform:translateZ(0);
+        transition:transform var(--speed), background var(--speed), border-color var(--speed);
+      }
+      :root[data-theme="light"] .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+      .with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+      .dock .row{
+        height:var(--dock-h);
+        display:flex;
+        justify-content:space-around;
+        align-items:center;
+        padding:0 12px;
+        gap:4px;
+      }
+      .dock a{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:4px;
+        padding:8px 12px;
+        min-width:56px;
+        border-radius:14px;
+        color:inherit;
+        transition: background var(--speed), color var(--speed), transform var(--speed);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .dock a:active{ transform:scale(.97); }
+      .dock a.active,
+      .dock a:hover{
+        background:var(--elev);
+        transform:translateY(-1px);
+        color:var(--text);
+      }
+      .dock .label{ font-size:11px; color:inherit }
+    }
+    @media (max-width:1023.98px) and (prefers-color-scheme: light){
+      :root:not([data-theme="dark"]) .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+    }
+
+    /* Sections */
+    .section{ border:1px solid var(--line); border-radius:12px; background:var(--surface); overflow:hidden; margin-bottom:12px }
+    .section .head{ display:flex; align-items:center; gap:8px; padding:14px; font-weight:800; border-bottom:1px solid var(--line); cursor:pointer; user-select:none }
+    .section .head .spacer{ flex:1 }
+    .section .head .chev{ transition: transform var(--speed) }
+    .section[data-open="true"] .head .chev{ transform: rotate(180deg) }
+    .section .body{ overflow:hidden; max-height:0; padding:0 14px; transition:max-height .24s ease, padding .24s ease, opacity .24s ease; opacity:.0 }
+    .section[data-open="true"] .body{ max-height:1600px; padding:12px 14px; opacity:1 }
+
+    /* Controls */
+    .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px }
+    .btn{ padding:8px 12px; border-radius:10px; border:1px solid var(--line); background:var(--elev); color:var(--text); font-weight:700; }
+    .btn.primary{ background:var(--brand); border-color:transparent; color:#fff }
+    .btn.warn{ background:var(--warn); border-color:transparent; color:#fff }
+    .btn.danger{ background:var(--danger); border-color:transparent; color:#fff }
+    .chip{ padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:var(--elev); font-weight:700; font-size:12px; width:fit-content }
+    .field{ display:flex; flex-direction:column; gap:6px; margin-top:12px }
+    .field label{ font-weight:700; font-size:13px }
+    .field .field-hint{ font-size:12px; color:var(--muted); line-height:1.4 }
+    .field .toolbar{ margin-bottom:0 }
+    #actionTarget{ white-space:pre-line; margin-bottom:8px }
+
+    /* Lists */
+    .table{ width:100%; border-collapse:separate; border-spacing:0; overflow:auto }
+    .table th, .table td{ border-bottom:1px solid var(--line); padding:10px 8px; text-align:left; vertical-align:top }
+    .table th{ font-size:12px; color:var(--muted); font-weight:700 }
+    .row-card{ border:1px solid var(--line); border-radius:12px; padding:10px; display:grid; gap:8px; background:var(--surface) }
+    .row-split{ display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center }
+    .row-actions{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      width:100%;
+    }
+    .admin-comment-list{ display:flex; flex-direction:column; gap:8px; margin-top:8px }
+    .admin-comment-row{ border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--elev); display:grid; gap:6px }
+    .admin-comment-row .meta{ font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between }
+    .admin-comment-row .text{ white-space:pre-wrap }
+    .admin-attachments{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px }
+    .admin-attachments a{
+      border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px;
+      background:var(--surface); color:var(--text);
+    }
+    .chat-list{ display:grid; gap:10px; margin-top:8px }
+    .chat-row{ border:1px solid var(--line); border-radius:12px; padding:10px; display:grid; gap:6px; background:var(--surface) }
+    .chat-row .meta{ font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:8px }
+    .chat-log{
+      border:1px solid var(--line);
+      border-radius:10px;
+      max-height:60vh;
+      overflow:auto;
+      background:var(--surface);
+      margin-top:10px;
+    }
+    .chat-log-entry{ padding:8px 10px; border-bottom:1px solid var(--line); }
+    .chat-log-entry:last-child{ border-bottom:0 }
+    .chat-log-entry .meta{
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .chat-log-entry .text{ margin-top:4px; white-space:pre-wrap; word-break:break-word; }
+    .row-actions .btn{ flex:0 0 auto; }
+    @media (max-width:1023.98px){
+      .row-split{ grid-template-columns:1fr; }
+      .row-actions{
+        justify-content:flex-start;
+      }
+      .row-actions .btn{
+        flex:1 1 calc(50% - 6px);
+        min-width:140px;
+      }
+    }
+    @media (max-width:640px){
+      .row-actions .btn{
+        flex:1 1 100%;
+      }
+    }
+    .u{ display:flex; align-items:center; gap:8px }
+    .u .ava{ width:28px; height:28px; border-radius:50%; background:#D1D5DB; display:flex; align-items:center; justify-content:center; font-weight:700 }
+
+    /* Helpers */
+    .muted{ color:var(--muted) }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px }
+    .status-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; background:#22c55e }
+    .status-dot.suspended{ background:#f59e0b } .status-dot.banned{ background:#ef4444 } .status-dot.inactive{ background:#64748b }
+    .note{ font-size:12px; color:var(--muted) }
+    .switch{ display:flex; gap:6px; align-items:center }
+    .switch input{ width:40px; height:22px }
+    .kbd{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding:0 6px; border:1px solid var(--line); border-radius:6px; background:var(--elev); font-size:12px }
+
+    /* Modals */
+    .modal{
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.45); z-index:150; padding:24px;
+    }
+    .modal.open{ display:flex; }
+    .modal .panel{
+      width:min(640px, 100%); max-height:calc(100vh - 60px); overflow:auto;
+      border:1px solid var(--line); border-radius:14px; background:var(--surface);
+      box-shadow:var(--shadow); display:flex; flex-direction:column;
+    }
+    .modal .head{
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      padding:16px; border-bottom:1px solid var(--line); font-weight:700;
+    }
+    .modal .body{ padding:16px; overflow-y:auto; }
+    .modal .foot{
+      padding:14px 16px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:8px;
+    }
+    @media (max-width:600px){
+      .modal{ padding:12px; }
+      .modal .panel{ width:100%; max-height:calc(100vh - 24px); border-radius:12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Mobile Top -->
+    <div class="m-top" role="navigation" aria-label="상단 바(모바일)">
+      <div class="m-left"><div class="avatar" id="mAva">A</div></div>
+      <div class="m-center"><div class="brand">LOOMA</div></div>
+      <div class="m-right">
+        <a href="notifications.html" aria-label="알림" data-nav class="icon-btn"><i class="ri-notification-3-line"></i></a>
+      </div>
+    </div>
+
+    <main class="main">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="side-head"><div class="side-brand">LOOMA</div></div>
+        <div class="me-card hidden" id="sidebarSigned">
+          <div class="avatar" id="sidebarAvatar">A</div>
+          <div>
+            <div class="name" id="sidebarName">관리자</div>
+            <div class="id" id="sidebarHandle">@admin</div>
+          </div>
+          <button class="icon-btn" id="btnLogout" title="로그아웃"><i class="ri-logout-circle-line"></i></button>
+        </div>
+        <div class="me-card" id="sidebarGuest">
+          <div>
+            <div class="name">Guest</div>
+            <div class="id muted" style="font-size:12px">로그인하고 더 많은 기능을 이용하세요</div>
+          </div>
+          <a class="icon-btn" href="auth.html" title="로그인"><i class="ri-login-circle-line"></i></a>
+        </div>
+
+        <nav class="nav" id="sideNav">
+          <a href="home.html" data-nav data-tab="home"><i class="ri-home-5-line icon"></i><span class="label">홈</span></a>
+          <a href="explore.html" data-nav data-tab="explore"><i class="ri-compass-3-line icon"></i><span class="label">탐색</span></a>
+          <a href="notifications.html" data-nav data-tab="noti" class="notif-nav"><i class="ri-notification-3-line icon"></i><span class="label">알림</span><span class="notif-badge hidden" data-notif-count></span></a>
+          <a href="messages.html" data-nav data-tab="messages"><i class="ri-chat-3-line icon"></i><span class="label">메시지</span></a>
+          <a href="profile.html" data-nav data-tab="profile"><i class="ri-user-3-line icon"></i><span class="label">프로필</span></a>
+          <a href="settings.html" data-nav data-tab="settings"><i class="ri-settings-3-line icon"></i><span class="label">설정</span></a>
+        </nav>
+      </aside>
+
+      <!-- Center -->
+      <section class="container with-dock-pad" id="accordionRoot">
+        <!-- 1) 신고 처리 -->
+        <div class="section" id="secReports" data-open="true" aria-expanded="true">
+          <div class="head" tabindex="0" role="button" aria-controls="bodyReports">
+            <i class="ri-flag-2-line"></i> 신고 처리
+            <span class="spacer"></span>
+            <i class="ri-arrow-down-s-line chev"></i>
+          </div>
+          <div class="body" id="bodyReports">
+            <div class="toolbar">
+              <select id="filterType">
+                <option value="">전체 유형</option><option value="post">게시물</option><option value="comment">댓글</option><option value="user">사용자</option>
+              </select>
+              <select id="filterStatus">
+                <option value="">처리 상태</option><option value="open">대기</option><option value="reviewing">검토 중</option><option value="closed">처리 완료</option>
+              </select>
+              <input id="filterQuery" placeholder="신고 내용/작성자 검색" style="flex:1; min-width:180px"/>
+              <button class="btn" id="btnReloadReports"><i class="ri-refresh-line"></i>&nbsp;새로고침</button>
+            </div>
+            <div id="reportList" style="display:grid; gap:10px"></div>
+          </div>
+        </div>
+
+        <!-- 2) 사용자 관리 -->
+        <div class="section" id="secUsers" data-open="false" aria-expanded="false">
+          <div class="head" tabindex="0" role="button" aria-controls="bodyUsers">
+            <i class="ri-team-line"></i> 사용자 관리
+            <span class="spacer"></span>
+            <i class="ri-arrow-down-s-line chev"></i>
+          </div>
+          <div class="body" id="bodyUsers">
+            <div class="toolbar">
+              <input id="userQuery" placeholder="이름/아이디/이메일 검색" style="flex:1; min-width:200px"/>
+              <select id="userRole"><option value="">역할: 전체</option><option value="user">일반</option><option value="admin">관리자</option><option value="superadmin">슈퍼관리자</option></select>
+              <select id="userStatus"><option value="">상태: 전체</option><option value="active">정상</option><option value="suspended">정지</option><option value="banned">영구정지</option><option value="inactive">비활성화</option></select>
+              <button class="btn" id="btnSearchUsers"><i class="ri-search-line"></i>&nbsp;검색</button>
+              <button class="btn" id="btnReloadUsers" title="새로고침"><i class="ri-refresh-line"></i></button>
+            </div>
+            <div style="overflow:auto">
+              <table class="table" id="userTable">
+                <thead><tr><th>사용자</th><th>아이디</th><th>이메일</th><th>역할</th><th>상태</th><th>가입일</th><th style="text-align:right">조치</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3) 게시물 관리 -->
+        <div class="section" id="secPosts" data-open="false" aria-expanded="false">
+          <div class="head" tabindex="0" role="button" aria-controls="bodyPosts">
+            <i class="ri-article-line"></i> 게시물 관리
+            <span class="spacer"></span>
+            <i class="ri-arrow-down-s-line chev"></i>
+          </div>
+          <div class="body" id="bodyPosts">
+            <div class="toolbar">
+              <input id="postQuery" placeholder="본문/작성자 검색" style="flex:1; min-width:220px"/>
+              <select id="postStatus"><option value="">상태: 전체</option><option value="active">정상</option><option value="reported">신고됨</option><option value="removed">삭제됨</option></select>
+              <button class="btn" id="btnSearchPosts"><i class="ri-search-line"></i>&nbsp;검색</button>
+              <button class="btn" id="btnReloadPosts" title="새로고침"><i class="ri-refresh-line"></i></button>
+            </div>
+            <div id="postList" style="display:grid; gap:10px"></div>
+          </div>
+        </div>
+
+        <!-- 4) 공지사항 -->
+        <div class="section" id="secNotice" data-open="false" aria-expanded="false">
+          <div class="head" tabindex="0" role="button" aria-controls="bodyNotice">
+            <i class="ri-megaphone-line"></i> 공지사항
+            <span class="spacer"></span>
+            <i class="ri-arrow-down-s-line chev"></i>
+          </div>
+          <div class="body" id="bodyNotice">
+            <div class="row-card">
+              <div style="display:grid; gap:8px">
+                <input id="annTitle" placeholder="공지 제목(필수)"/>
+                <textarea id="annBody" placeholder="공지 내용(마크다운 허용 예정)"></textarea>
+                <div class="toolbar">
+                  <label class="switch"><input type="checkbox" id="annPin"/>&nbsp;상단 고정</label>
+                  <span class="spacer"></span>
+                  <button class="btn primary" id="btnPublish"><i class="ri-megaphone-line"></i>&nbsp;게시</button>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:10px; display:grid; gap:10px" id="annList"></div>
+          </div>
+        </div>
+
+        <!-- 5) 시스템 관리 -->
+        <div class="section" id="secSystem" data-open="false" aria-expanded="false">
+          <div class="head" tabindex="0" role="button" aria-controls="bodySystem">
+            <i class="ri-shield-keyhole-line"></i> 시스템 관리
+            <span class="spacer"></span>
+            <i class="ri-arrow-down-s-line chev"></i>
+          </div>
+          <div class="body" id="bodySystem">
+            <div class="row-card">
+              <div style="font-weight:800; margin-bottom:6px">회원가입 모드</div>
+              <div class="toolbar" role="group" aria-label="가입 모드">
+                <label class="chip"><input type="radio" name="regMode" value="open" checked>&nbsp;열린 가입(누구나)</label>
+                <label class="chip"><input type="radio" name="regMode" value="invite">&nbsp;추천인 코드 필요</label>
+                <span class="spacer"></span>
+                <button class="btn primary" id="btnSaveRegMode">저장</button>
+              </div>
+              <div class="note">추천인 코드 모드에서는 신규 가입자가 **유효한 코드**를 제출해야 가입이 완료됩니다.</div>
+            </div>
+
+            <div class="row-card">
+              <div style="font-weight:800; margin-bottom:6px">기본 작성 기능 제한</div>
+              <p class="note" id="writeLimitStatus">모든 사용자가 게시물과 댓글을 작성할 수 있습니다.</p>
+              <div class="toolbar">
+                <label class="switch"><input type="checkbox" id="writeLimitToggle"/>&nbsp;관리자만 게시물/댓글 작성 허용</label>
+                <span class="spacer"></span>
+                <button class="btn primary" id="btnSaveWriteLimit">저장</button>
+              </div>
+            </div>
+
+            <div class="row-card" id="chatInspectCard" style="display:none">
+              <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start">
+                <div style="flex:1">
+                  <div style="font-weight:800; margin-bottom:4px">채팅 검사</div>
+                  <p class="note">모두의 광장을 제외한 다이렉트/그룹 채팅을 읽기 전용으로 확인합니다.</p>
+                </div>
+                <button class="btn" id="btnReloadChat"><i class="ri-refresh-line"></i>&nbsp;새로고침</button>
+              </div>
+              <div class="field">
+                <label for="chatSearch">채널 검색</label>
+                <input id="chatSearch" placeholder="채널 이름 또는 구성원 검색"/>
+              </div>
+              <div id="chatChannelList" class="chat-list">
+                <div class="note">슈퍼관리자 전용 기능입니다.</div>
+              </div>
+            </div>
+
+            <div class="row-card" id="inviteMgmt" style="display:none">
+              <div style="display:grid; gap:10px">
+                <div style="font-weight:800">추천인 코드 관리</div>
+                <div class="toolbar">
+                  <input id="codePrefix" placeholder="코드 접두어(선택)"/>
+                  <select id="codeExp"><option value="3d">만료: 3일</option><option value="7d">만료: 7일</option><option value="30d">만료: 30일</option></select>
+                  <select id="codeLimit"><option value="1">1회 사용</option><option value="3">3회</option><option value="10">10회</option><option value="unlimited">무제한</option></select>
+                  <button class="btn" id="btnGenerate"><i class="ri-add-line"></i>&nbsp;코드 생성</button>
+                </div>
+                <div style="overflow:auto">
+                  <table class="table" id="codeTable">
+                    <thead><tr><th>코드</th><th>생성일</th><th>만료일</th><th>사용</th><th>상태</th><th style="text-align:right">동작</th></tr></thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+                <div class="note">가입 폼(auth.html)에서 코드 검증 → 서버(`/api/admin/refcodes/verify`)로 수행하도록 연동 예정.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right rail -->
+      <aside class="rrail">
+        <div class="card">
+          <div style="font-weight:800; margin-bottom:8px">오늘의 요약</div>
+          <div class="metric"><span>대기 중 신고</span><strong id="statOpen">-</strong></div>
+          <div class="metric"><span>신규 가입</span><strong id="statNewUsers">-</strong></div>
+          <div class="metric"><span>공지 게시 수</span><strong id="statNotices">-</strong></div>
+        </div>
+        <div class="card">
+          <div style="font-weight:800; margin-bottom:8px">빠른 링크</div>
+          <div style="display:grid; gap:8px">
+            <a class="btn" href="settings.html" data-nav><i class="ri-settings-3-line"></i>&nbsp;설정</a>
+            <a class="btn" href="home.html" data-nav><i class="ri-home-5-line"></i>&nbsp;홈</a>
+          </div>
+        </div>
+        <div class="card note">
+          모든 조치에는 **사유 입력**이 필요합니다.  
+          사유는 사용자가 `auth.html`에서 로그인 시도할 때 표시됩니다.
+        </div>
+      </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+      <div class="row">
+        <div>© 2025 LOOMA. All rights reserved. · 운영주체: Looma by Luminary Labs</div>
+        <div style="display:flex; gap:12px">
+          <a class="muted" href="terms.html" data-nav>이용 약관</a>
+          <a class="muted" href="privacy.html" data-nav>개인정보 처리방침</a>
+          <a class="muted" href="https://luminarylabs.netlify.app" target="_blank" rel="noopener noreferrer">Luminary Labs 소개</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Mobile Dock -->
+    <nav class="dock" role="navigation" aria-label="하단 메뉴(모바일)">
+      <div class="row" id="dockNav">
+        <a href="home.html" data-nav data-tab="home"><i class="ri-home-5-line"></i><span class="label">홈</span></a>
+        <a href="explore.html" data-nav data-tab="explore"><i class="ri-compass-3-line"></i><span class="label">탐색</span></a>
+        <a href="messages.html" data-nav data-tab="messages"><i class="ri-chat-3-line"></i><span class="label">메시지</span></a>
+        <a href="profile.html" data-nav data-tab="profile"><i class="ri-user-3-line"></i><span class="label">프로필</span></a>
+        <a href="settings.html" data-nav data-tab="settings"><i class="ri-settings-3-line"></i><span class="label">설정</span></a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- 공용 모달: 조치 사유 입력 -->
+  <div class="modal" id="modal-action" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="관리자 조치">
+      <div class="head">
+        <span id="actionTitle">관리자 조치</span>
+        <button class="icon-btn" data-close="#modal-action" title="닫기"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="body">
+        <div id="actionTarget" class="note mono"></div>
+        <div class="field">
+          <label for="actionType">조치 유형</label>
+          <select id="actionType">
+            <option value="dismiss">무시(종결)</option>
+            <option value="warn">경고</option>
+            <option value="delete-content">콘텐츠 삭제</option>
+            <option value="suspend">정지(기간)</option>
+            <option value="ban">영구정지</option>
+            <option value="deactivate">비활성화</option>
+            <option value="make-admin">관리자 지정</option>
+            <option value="remove-admin">관리자 해제</option>
+          </select>
+        </div>
+        <div id="durationRow" class="field hidden">
+          <label for="actionDuration">정지 기간</label>
+          <div class="toolbar">
+            <select id="actionDuration">
+              <option value="1d">1일</option><option value="7d">7일</option><option value="30d">30일</option><option value="custom">직접 입력</option>
+            </select>
+            <input id="actionDurationCustom" class="hidden" placeholder="예: 3d, 12h"/>
+          </div>
+        </div>
+        <div class="field">
+          <label for="actionReason">조치 사유</label>
+          <div class="field-hint">사용자에게 그대로 표시됩니다.</div>
+          <textarea id="actionReason" placeholder="사유를 자세히 적어 주세요." required></textarea>
+        </div>
+        <div class="field hidden" id="pinRow">
+          <label for="actionPin">슈퍼관리자 보안 PIN</label>
+          <input id="actionPin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="4자리 숫자" autocomplete="one-time-code"/>
+          <div class="field-hint">슈퍼관리자 권한을 해제할 때만 필요합니다.</div>
+        </div>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-action">취소</button>
+        <button class="btn primary" id="actionDo">실행</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공용 모달: 상세 보기 -->
+  <div class="modal" id="modal-view" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="상세 보기">
+      <div class="head">
+        <span id="viewTitle">상세</span>
+        <button class="icon-btn" data-close="#modal-view" title="닫기"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="body" id="viewBody"></div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-view">닫기</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal" id="modal-chat" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="채팅 검사">
+      <div class="head">
+        <span id="chatModalTitle">채팅 검사</span>
+        <button class="icon-btn" data-close="#modal-chat" title="닫기"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="body" id="chatModalBody"><div class="note">채널을 선택하세요.</div></div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-chat">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toastRoot" style="position:fixed; right:12px; bottom:calc(var(--footer-h) + 12px); z-index:140"></div>
+
+  <script>
+    (() => {
+      const $ = (s, el=document)=> el.querySelector(s);
+      const $$ = (s, el=document)=> Array.from(el.querySelectorAll(s));
+
+      /* ---------- Smooth nav ---------- */
+      $$('a[data-nav]').forEach(a=>{
+        const href=a.getAttribute('href')||'';
+        a.addEventListener('click',e=>{
+          if(!href || href.startsWith('#') || href.startsWith('http')) return;
+          e.preventDefault();
+          if(document.startViewTransition){ document.startViewTransition(()=> location.href=href); }
+          else{ document.body.style.opacity='0'; setTimeout(()=> location.href=href, 140); }
+        });
+      });
+
+      /* ---------- Toast ---------- */
+      function toast(msg){
+        const root = $('#toastRoot'); if(!root) return;
+        const el = document.createElement('div');
+        el.textContent = msg;
+        el.style.cssText = 'margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:var(--shadow);opacity:0;transform:translateY(6px);transition:.18s;';
+        root.appendChild(el);
+        requestAnimationFrame(()=>{ el.style.opacity='1'; el.style.transform='none'; });
+        setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(6px)'; setTimeout(()=> el.remove(), 200); }, 2200);
+      }
+
+      /* ---------- Modal helpers ---------- */
+      function openModal(sel){ const m=$(sel); if(m){ m.classList.add('open'); m.setAttribute('aria-hidden','false'); } }
+      function closeModal(sel){ const m=$(sel); if(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); } }
+      document.addEventListener('click', (e)=>{
+        const closeSel = e.target.closest('[data-close]')?.getAttribute('data-close');
+        if(closeSel){ e.preventDefault(); closeModal(closeSel); return; }
+        const modal = e.target.classList.contains('modal') ? e.target : null;
+        if(modal){ closeModal('#'+modal.id); }
+      });
+      document.addEventListener('keydown', (e)=>{
+        if(e.key==='Escape'){ $$('.modal.open').forEach(m=> closeModal('#'+m.id)); }
+      });
+
+      /* ---------- Fetch helper ---------- */
+      async function fetchJSON(path, { method='GET', body, headers } = {}){
+        const opt = { method, credentials: 'include', headers: { ...(body && !(body instanceof FormData) ? {'Content-Type':'application/json'} : {}), ...(headers||{}) } };
+        if(body) opt.body = body instanceof FormData ? body : JSON.stringify(body);
+        try{
+          const res = await fetch(path, opt);
+          const ct = res.headers.get('content-type')||'';
+          const payload = ct.includes('application/json') ? await res.json() : await res.text();
+          if(!res.ok) throw Object.assign(new Error('Request failed'), { status:res.status, data:payload });
+          return payload;
+        }catch(err){ throw err; }
+      }
+
+      /* ---------- Session / role gating ---------- */
+      const SUPER_ADMIN_HANDLES = new Set(['@nuguls', '@looma_owner']);
+      const SUPERADMIN_PIN_CODE = '1018';
+      const ADMIN_FLAG_KEYWORDS = new Set([
+        'admin',
+        'administrator',
+        'moderator',
+        'manager',
+        'owner',
+        'staff',
+        'operator',
+        'maintainer',
+        'superadmin',
+      ]);
+      const ADMIN_FLAG_BLACKLIST = new Set(['authenticated', 'user', 'member', 'basic']);
+      const SUPERADMIN_FLAG_KEYWORDS = new Set(['superadmin', 'owner', 'root', 'founder']);
+
+      const toHandleLower = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
+      function collectRoleFlags(user) {
+        if (!user) return [];
+        const flags = new Set();
+        const push = (value) => {
+          if (value === undefined || value === null) return;
+          const str = String(value).trim().toLowerCase();
+          if (!str) return;
+          flags.add(str);
+        };
+        const arrays = [user.roles, user.capabilities, user.tags, user.privileges, user.scopes];
+        arrays.forEach((list) => {
+          if (Array.isArray(list)) list.forEach(push);
+        });
+        [
+          user.role,
+          user.adminRole,
+          user.accountRole,
+          user.adminLevel,
+          user.tier,
+          user.type,
+        ].forEach(push);
+        if (user.isAdmin === true || user.admin === true) push('admin');
+        if (user.isSuperAdmin === true || user.superadmin === true) push('superadmin');
+        if (user.isOwner === true || user.owner === true) push('owner');
+        return Array.from(flags);
+      }
+      function isSuperAdminUser(user) {
+        if (!user) return false;
+        const handle = toHandleLower(user.handle);
+        if (handle && SUPER_ADMIN_HANDLES.has(handle)) return true;
+        const roles = collectRoleFlags(user);
+        if (roles.some((role) => SUPERADMIN_FLAG_KEYWORDS.has(role))) return true;
+        return false;
+      }
+      function isAdminUser(user) {
+        if (!user) return false;
+        if (isSuperAdminUser(user)) return true;
+        const roles = collectRoleFlags(user);
+        return roles.some((role) => {
+          if (!role || ADMIN_FLAG_BLACKLIST.has(role)) return false;
+          if (ADMIN_FLAG_KEYWORDS.has(role)) return true;
+          const tokens = role.split(/[^a-z0-9]+/).filter(Boolean);
+          return tokens.some((token) => ADMIN_FLAG_KEYWORDS.has(token));
+        });
+      }
+
+      function getActionTargetUser(context = state.actionContext) {
+        if (!context?.userId) return null;
+        return state.users.find((u) => String(u.id) === String(context.userId)) || null;
+      }
+
+      function contextTargetsSuperAdmin(context = state.actionContext) {
+        if (!context) return false;
+        const targetUser = getActionTargetUser(context);
+        if (targetUser) return isSuperAdminUser(targetUser);
+        const handle = toHandleLower(context.targetHandle);
+        if (handle && SUPER_ADMIN_HANDLES.has(handle)) return true;
+        const role = (context.targetRole || '').toLowerCase();
+        if (role === 'superadmin') return true;
+        return false;
+      }
+
+      function shouldRequireSuperPin(selectedAction) {
+        const action = selectedAction || $('#actionType')?.value || '';
+        if (action !== 'remove-admin') return false;
+        return contextTargetsSuperAdmin();
+      }
+
+      function refreshActionPinRow(selectedAction) {
+        const needPin = shouldRequireSuperPin(selectedAction);
+        const pinRow = $('#pinRow');
+        const pinInput = $('#actionPin');
+        if (pinRow) pinRow.classList.toggle('hidden', !needPin);
+        if (pinInput) {
+          if (needPin) {
+            pinInput.setAttribute('required', 'true');
+            pinInput.setAttribute('aria-required', 'true');
+          } else {
+            pinInput.removeAttribute('required');
+            pinInput.removeAttribute('aria-required');
+            pinInput.value = '';
+          }
+        }
+        return needPin;
+      }
+
+      const state = {
+        session:null,
+        demo:false,
+        reports:[],
+        users:[],
+        posts:[],
+        notices:[],
+        codes:[],
+        actionContext:null,
+        regMode:'open',
+        basicWriteLimit:false,
+        postDetails:{},
+        chatChannels:[],
+        chatFilter:'',
+      };
+
+      const DEMO_KEYS = {
+        reports: 'looma:demoReports',
+        users: 'looma:demoUsers',
+        posts: 'looma:demoPosts',
+        announcements: 'looma:demoAnnouncements',
+      };
+
+      function cloneDeep(value){
+        return JSON.parse(JSON.stringify(value));
+      }
+      function readDemoList(key){
+        if(typeof localStorage === 'undefined') return null;
+        try{
+          const raw = localStorage.getItem(key);
+          if(!raw) return null;
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : null;
+        }catch(_){
+          return null;
+        }
+      }
+      function writeDemoList(key, data){
+        if(typeof localStorage === 'undefined') return;
+        try{ localStorage.setItem(key, JSON.stringify(data)); }catch(_){}
+      }
+      function ensureDemoList(key, seed){
+        const existing = readDemoList(key);
+        if(existing) return existing;
+        const fallback = typeof seed === 'function' ? seed() : cloneDeep(seed || []);
+        writeDemoList(key, fallback);
+        return cloneDeep(fallback);
+      }
+      function updateDemoList(key, data){
+        writeDemoList(key, data);
+      }
+      const nowIso = ()=> new Date().toISOString();
+      const isoAgo = (ms)=> new Date(Date.now()-ms).toISOString();
+      function demoReportsSeed(){
+        return [
+          { id:'R-101', type:'post', createdAt: isoAgo(60000), summary:'욕설이 포함된 게시물', reason:'모욕적 표현', detail:'본문에 욕설 포함', reporter:{name:'홍길동', handle:'@gildong'}, target:{ type:'post', id:'P-9', userId:'U-3', handle:'@mint', name:'민트' }, status:'open' },
+          { id:'R-102', type:'comment', createdAt: isoAgo(3600000), summary:'스팸 댓글', reason:'광고 링크', detail:'외부 사이트 광고 링크 포함', reporter:{name:'이서연', handle:'@seoyeon'}, target:{ type:'comment', id:'C-42', userId:'U-7', handle:'@blue', name:'블루' }, status:'open' },
+          { id:'R-103', type:'user', createdAt: isoAgo(7200000), summary:'사칭 계정 의심', reason:'공식 사칭', detail:'프로필 설명에 공식 계정 사칭 문구', reporter:{name:'관리봇', handle:'@system'}, target:{ type:'user', id:'U-11', userId:'U-11', handle:'@officiall0oma', name:'Official L0oma' }, status:'reviewing' },
+        ];
+      }
+      function demoUsersSeed(){
+        return [
+          { id:'U-1', name:'루마', handle:'@looma', email:'hi@looma.app', role:'superadmin', status:'active', createdAt: isoAgo(86400000*30) },
+          { id:'U-3', name:'민트', handle:'@mint', email:'mint@example.com', role:'user', status:'active', createdAt: isoAgo(86400000*10) },
+          { id:'U-7', name:'블루', handle:'@blue', email:'blue@example.com', role:'admin', status:'suspended', createdAt: isoAgo(86400000*60) },
+          { id:'U-11', name:'Official L0oma', handle:'@officiall0oma', email:'fake@ex.com', role:'user', status:'inactive', createdAt: isoAgo(86400000*2) },
+        ];
+      }
+      function demoPostsSeed(){
+        return [
+          { id:'P-9', author:{ id:'U-3', handle:'@mint', name:'민트' }, text:'안녕하세요! #Looma', createdAt: isoAgo(3600000), status:'active' },
+          { id:'P-11', author:{ id:'U-7', handle:'@blue', name:'블루' }, text:'스팸성 홍보글 링크...', createdAt: isoAgo(7200000), status:'reported' },
+          { id:'P-12', author:{ id:'U-11', handle:'@officiall0oma', name:'Official L0oma' }, text:'사칭 의심 글', createdAt: isoAgo(8200000), status:'removed' },
+        ];
+      }
+      function demoAnnouncementsSeed(){
+        return [
+          { id:'N-1', title:'서비스 가이드라인 업데이트', body:'커뮤니티 가이드 업데이트 요약…', pinned:true, createdAt: isoAgo(7200000) },
+          { id:'N-2', title:'신규 기능: 투표', body:'이제 게시물에 투표를 추가…', pinned:false, createdAt: isoAgo(86400000*2) },
+        ];
+      }
+
+      function applyAvatar(el, url, fallback='U'){
+        if(!el) return;
+        if(url){ el.style.backgroundImage=`url("${String(url).replace(/"/g,'%22')}")`; el.textContent=''; }
+        else{ el.style.backgroundImage=''; el.textContent=(fallback.replace(/^@/,'')[0]||'U').toUpperCase(); }
+      }
+
+      function findUserById(id){
+        if(!id) return null;
+        return state.users.find(u=> String(u.id)===String(id)) || null;
+      }
+      function findReportById(id){
+        if(!id) return null;
+        return state.reports.find(r=> String(r.id)===String(id)) || null;
+      }
+      function findPostById(id){
+        if(!id) return null;
+        return state.posts.find(p=> String(p.id)===String(id)) || null;
+      }
+      function statusLabel(status){
+        const map = { active:'정상', suspended:'정지', banned:'영구정지', inactive:'비활성', deleted:'삭제됨', reported:'신고됨', removed:'삭제됨' };
+        return map[status] || status || '';
+      }
+      function toDate(value){
+        if(value instanceof Date) return Number.isFinite(value.getTime()) ? value : null;
+        const d = value ? new Date(value) : null;
+        return d && Number.isFinite(d.getTime()) ? d : null;
+      }
+      function formatDateTime(value){
+        const d = toDate(value);
+        return d ? d.toLocaleString() : '-';
+      }
+      function formatDateOnly(value){
+        const d = toDate(value);
+        return d ? d.toLocaleDateString() : '-';
+      }
+      function escapeHtml(str){
+        return String(str || '').replace(/[&<>"']/g, (ch)=>({
+          '&':'&amp;',
+          '<':'&lt;',
+          '>':'&gt;',
+          '"':'&quot;',
+          "'":'&#39;',
+        })[ch] || ch);
+      }
+      function describeActionContext(ctx){
+        if(!ctx) return '';
+        const pieces = [];
+        if(ctx.reportId){
+          pieces.push(`신고 #${ctx.reportId}`);
+        }
+        if(ctx.userId){
+          const user = findUserById(ctx.userId);
+          if(user){
+            const parts = [user.name || user.handle || user.id];
+            if(user.handle && user.handle !== parts[0]) parts.push(user.handle);
+            const status = statusLabel(user.status);
+            if(status) parts.push(`상태:${status}`);
+            pieces.push(`사용자 ${parts.join(' · ')}`);
+          }else{
+            pieces.push(`사용자 ID ${ctx.userId}`);
+          }
+        }
+        if(ctx.contentId){
+          const post = findPostById(ctx.contentId);
+          if(post){
+            const author = post.author?.handle || post.author?.name || '';
+            pieces.push(`게시물 #${post.id}${author?` (${author})`:''}`);
+          }else{
+            pieces.push(`콘텐츠 ID ${ctx.contentId}`);
+          }
+        }
+        return pieces.join(' · ');
+      }
+      function suggestReason(ctx){
+        if(!ctx) return '';
+        const report = ctx.reportId ? findReportById(ctx.reportId) : null;
+        if(report){
+          if(report.reason) return report.reason;
+          if(report.summary) return report.summary;
+        }
+        return '';
+      }
+      function extractActionContext(el){
+        if(!el) return null;
+        const ds = el.dataset || {};
+        const ctx = {};
+        if(ds.adminAction) ctx.action = ds.adminAction;
+        if(ds.adminReportId) ctx.reportId = ds.adminReportId;
+        if(ds.adminUserId) ctx.userId = ds.adminUserId;
+        if(ds.adminContentId) ctx.contentId = ds.adminContentId;
+        if(ds.adminCommentId) ctx.commentId = ds.adminCommentId;
+        if(ds.adminTargetType) ctx.targetType = ds.adminTargetType;
+        if(ds.adminTargetRole) ctx.targetRole = ds.adminTargetRole;
+        if(ds.adminTargetHandle) ctx.targetHandle = ds.adminTargetHandle;
+        return ctx;
+      }
+
+      async function loadSession(){
+        try{
+          const res = await fetchJSON('/api/session');
+          state.session = res?.user || null;
+          if(!state.session?.id) throw new Error('no session');
+          const isAdmin = isAdminUser(state.session);
+          const isSuper = isSuperAdminUser(state.session);
+          if (isSuper && !state.session.isSuperAdmin) {
+            state.session.isSuperAdmin = true;
+          }
+          if(!isAdmin){ location.href='home.html'; return false; }
+          $('#sidebarSigned').classList.remove('hidden'); $('#sidebarGuest').classList.add('hidden');
+          $('#sidebarName').textContent = state.session.name || state.session.handle || '관리자';
+          $('#sidebarHandle').textContent = state.session.handle || '';
+          applyAvatar($('#sidebarAvatar'), state.session.avatarUrl, state.session.name||'A');
+          applyAvatar($('#mAva'), state.session.avatarUrl, state.session.name||'A');
+          // nav active
+          $$('.nav a[data-tab], .dock a[data-tab]').forEach(a=> a.classList.toggle('active', a.dataset.tab==='settings'));
+          ensureChatInspectVisibility();
+          return true;
+        }catch(e){
+          // 데모 모드
+          state.demo = true;
+          state.session = { id:'demo', name:'Super Admin', handle:'@super', role:'superadmin' };
+          $('#sidebarSigned').classList.remove('hidden'); $('#sidebarGuest').classList.add('hidden');
+          $('#sidebarName').textContent = 'Super Admin'; $('#sidebarHandle').textContent = '@super';
+          applyAvatar($('#sidebarAvatar'), null, 'S'); applyAvatar($('#mAva'), null, 'S');
+          $$('.nav a[data-tab], .dock a[data-tab]').forEach(a=> a.classList.toggle('active', a.dataset.tab==='settings'));
+          toast('데모 모드로 열렸습니다(로컬 개발).');
+          ensureChatInspectVisibility();
+          return true;
+        }
+      }
+
+      /* ---------- Accordion: one open + delegated click (fix) ---------- */
+      function toggleSection(sec, forceOpen){
+        const wantOpen = forceOpen !== undefined ? forceOpen : sec.getAttribute('data-open')!=='true';
+        if(wantOpen){
+          $$('.section').forEach(s=>{ if(s!==sec){ s.setAttribute('data-open','false'); s.setAttribute('aria-expanded','false'); }});
+          sec.setAttribute('data-open','true'); sec.setAttribute('aria-expanded','true');
+        }else{
+          sec.setAttribute('data-open','false'); sec.setAttribute('aria-expanded','false');
+        }
+      }
+      // 초기 상태 반영
+      $$('.section').forEach(sec=> sec.setAttribute('aria-expanded', sec.getAttribute('data-open')==='true' ? 'true':'false'));
+      // 이벤트 위임: 어디를 눌러도 헤더면 동작
+      document.getElementById('accordionRoot').addEventListener('click', (e)=>{
+        const head = e.target.closest('.section .head'); if(!head) return;
+        toggleSection(head.parentElement);
+      });
+      document.getElementById('accordionRoot').addEventListener('keydown', (e)=>{
+        const head = e.target.closest('.section .head'); if(!head) return;
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleSection(head.parentElement); }
+      });
+
+      /* ---------- Reports ---------- */
+      function renderReportRow(r){
+        const el = document.createElement('div');
+        el.className='row-card';
+        const reporterName = r.reporter?.name || r.reporter?.handle || '알 수 없음';
+        const reporterHandle = r.reporter?.handle || '-';
+        const targetHandle = r.target?.handle || '';
+        const targetLabel = r.target?.type === 'user'
+          ? (targetHandle || '사용자')
+          : (targetHandle ? `${targetHandle}의 콘텐츠` : '콘텐츠');
+        const typeLabel = String(r.type || '').toUpperCase() || '-';
+        const createdLabel = formatDateTime(r.createdAt);
+        const reasonLabel = r.reason || '';
+        const summaryText = r.summary || '(내용 없음)';
+        const targetType = (r.target?.type || '').toLowerCase();
+        el.innerHTML = `
+          <div class="row-split">
+            <div style="display:grid; gap:4px">
+              <div class="mono muted">#${r.id} · ${typeLabel} · ${createdLabel}</div>
+              <div>${summaryText}</div>
+              <div class="note">신고자: ${reporterName} (${reporterHandle}) · 대상: ${targetLabel || '미지정'}</div>
+              ${reasonLabel?`<div class="note">사유: ${reasonLabel}</div>`:''}
+            </div>
+            <div class="row-actions">
+              <button class="btn" data-view="${r.id}"><i class="ri-eye-line"></i> 상세</button>
+              <button class="btn" data-admin-action="dismiss" data-admin-report-id="${r.id}">무시</button>
+              <button class="btn warn" data-admin-action="warn" data-admin-report-id="${r.id}" data-admin-user-id="${r.target?.userId||''}" data-admin-target-role="${r.target?.role||''}" data-admin-target-handle="${r.target?.handle||''}">경고</button>
+              ${targetType!=='user'
+                ? `<button class="btn danger" data-admin-action="delete-content" data-admin-report-id="${r.id}" data-admin-content-id="${r.target?.id||''}" data-admin-user-id="${r.target?.userId||''}" data-admin-target-role="${r.target?.role||''}" data-admin-target-handle="${r.target?.handle||''}">콘텐츠 삭제</button>`
+                : ''}
+              <button class="btn" data-admin-action="suspend" data-admin-report-id="${r.id}" data-admin-user-id="${r.target?.userId||''}" data-admin-target-role="${r.target?.role||''}" data-admin-target-handle="${r.target?.handle||''}">정지</button>
+              <button class="btn danger" data-admin-action="ban" data-admin-report-id="${r.id}" data-admin-user-id="${r.target?.userId||''}" data-admin-target-role="${r.target?.role||''}" data-admin-target-handle="${r.target?.handle||''}">영구정지</button>
+            </div>
+          </div>`;
+        return el;
+      }
+      function filterDemoReports(items){
+        const typeFilter = $('#filterType')?.value?.trim().toLowerCase() || '';
+        const statusFilter = $('#filterStatus')?.value?.trim().toLowerCase() || '';
+        const query = $('#filterQuery')?.value?.trim().toLowerCase() || '';
+        let next = Array.isArray(items) ? [...items] : [];
+        if(typeFilter) next = next.filter(r=> (r.type||'').toLowerCase()===typeFilter);
+        if(statusFilter) next = next.filter(r=> (r.status||'').toLowerCase()===statusFilter);
+        if(query){
+          next = next.filter(r=>{
+            const hay = [
+              r.summary,
+              r.reason,
+              r.detail,
+              r.reporter?.handle,
+              r.reporter?.name,
+              r.target?.handle,
+              r.target?.name,
+            ].filter(Boolean).map(v=> String(v).toLowerCase());
+            return hay.some(val=> val.includes(query));
+          });
+        }
+        return next;
+      }
+      function renderReports(){
+        const list = $('#reportList'); if(!list) return;
+        const source = state.demo ? filterDemoReports(state.reports) : (state.reports || []);
+        const items = [...source].sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+        list.innerHTML='';
+        items.forEach(r=> list.appendChild(renderReportRow(r)));
+        const openCount = (state.reports || []).filter(x=> (x.status||'').toLowerCase()==='open').length;
+        $('#statOpen').textContent = String(openCount);
+      }
+      async function loadReports(){
+        try{
+          let data;
+          if(state.demo){
+            state.reports = ensureDemoList(DEMO_KEYS.reports, demoReportsSeed);
+            renderReports();
+            return;
+          }else{
+            const params = new URLSearchParams();
+            const q=$('#filterQuery').value.trim(), t=$('#filterType').value, s=$('#filterStatus').value;
+            if(q) params.set('q',q); if(t) params.set('type',t); if(s) params.set('status',s);
+            data = await fetchJSON('/api/admin/reports?'+params.toString());
+          }
+          state.reports = data.items||[];
+          renderReports();
+        }catch(e){ toast('신고 목록을 불러오지 못했습니다.'); }
+      }
+
+      /* ---------- Users ---------- */
+      function statusChip(s){
+        const map = { active:['#22c55e','정상'], suspended:['#f59e0b','정지'], banned:['#ef4444','영구정지'], inactive:['#64748b','비활성'] };
+        const [c, label] = map[s] || ['#9AA3AE', s||'-'];
+        return `<span class="chip"><span class="status-dot" style="background:${c}"></span>${label}</span>`;
+      }
+      function renderUserRow(u){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><div class="u"><div class="ava">${(u.name||u.handle||'U').replace(/^@/,'')[0].toUpperCase()}</div>
+            <div><div style="font-weight:700">${u.name||'-'}</div><div class="note">${u.id}</div></div></div></td>
+          <td>${u.handle||'-'}</td><td>${u.email||'-'}</td>
+          <td>${u.role||'user'}</td><td>${statusChip(u.status||'active')}</td>
+          <td>${formatDateOnly(u.createdAt)}</td>
+          <td style="text-align:right">
+            <div class="row-actions" style="justify-content:flex-end">
+              ${(u.role==='admin'||u.role==='superadmin')
+                ? `<button class="btn" data-admin-action="remove-admin" data-admin-user-id="${u.id}" data-admin-target-role="${u.role||''}" data-admin-target-handle="${u.handle||''}">관리자 해제</button>`
+                : `<button class="btn" data-admin-action="make-admin" data-admin-user-id="${u.id}" data-admin-target-role="${u.role||''}" data-admin-target-handle="${u.handle||''}">관리자 지정</button>`}
+              ${u.status==='active'
+                ? `<button class="btn" data-admin-action="suspend" data-admin-user-id="${u.id}" data-admin-target-role="${u.role||''}" data-admin-target-handle="${u.handle||''}">정지</button>`
+                : `<button class="btn" data-admin-action="dismiss" data-admin-user-id="${u.id}" data-admin-target-role="${u.role||''}" data-admin-target-handle="${u.handle||''}">조치 해제</button>`}
+              <button class="btn danger" data-admin-action="ban" data-admin-user-id="${u.id}" data-admin-target-role="${u.role||''}" data-admin-target-handle="${u.handle||''}">영구정지</button>
+              <button class="btn" data-admin-action="deactivate" data-admin-user-id="${u.id}" data-admin-target-role="${u.role||''}" data-admin-target-handle="${u.handle||''}">비활성화</button>
+            </div>
+          </td>`;
+        return tr;
+      }
+      function filterDemoUsers(items){
+        const roleFilter = $('#userRole')?.value?.trim().toLowerCase() || '';
+        const statusFilter = $('#userStatus')?.value?.trim().toLowerCase() || '';
+        const query = $('#userQuery')?.value?.trim().toLowerCase() || '';
+        let next = Array.isArray(items) ? [...items] : [];
+        if(roleFilter){
+          next = next.filter(u=> (u.role||'user').toLowerCase()===roleFilter);
+        }
+        if(statusFilter){
+          next = next.filter(u=> (u.status||'active').toLowerCase()===statusFilter);
+        }
+        if(query){
+          next = next.filter(u=>{
+            const hay = [u.name,u.handle,u.email,u.id]
+              .filter(Boolean)
+              .map(v=> String(v).toLowerCase());
+            return hay.some(val=> val.includes(query));
+          });
+        }
+        return next;
+      }
+      function renderUsers(){
+        const tbody = $('#userTable tbody'); if(!tbody) return;
+        const source = state.demo ? filterDemoUsers(state.users) : (state.users || []);
+        const items = [...source].sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+        tbody.innerHTML='';
+        items.forEach(u=> tbody.appendChild(renderUserRow(u)));
+        const newCount = (state.users || []).filter(u=>{
+          const ts = new Date(u.createdAt).getTime();
+          return Number.isFinite(ts) && (Date.now() - ts) < 86400000;
+        }).length;
+        $('#statNewUsers').textContent = String(newCount);
+      }
+      async function loadUsers(){
+        try{
+          let data;
+          if(state.demo){
+            state.users = ensureDemoList(DEMO_KEYS.users, demoUsersSeed);
+            renderUsers();
+            return;
+          }else{
+            const params = new URLSearchParams();
+            const q=$('#userQuery').value.trim(), role=$('#userRole').value, status=$('#userStatus').value;
+            if(q) params.set('q',q); if(role) params.set('role',role); if(status) params.set('status',status);
+            data = await fetchJSON('/api/admin/users?'+params.toString());
+          }
+          state.users = data.items||[];
+          renderUsers();
+        }catch(e){ toast('사용자 목록을 불러오지 못했습니다.'); }
+      }
+
+      /* ---------- Posts ---------- */
+      function renderPostRow(p){
+        const el = document.createElement('div');
+        el.className='row-card';
+        const authorHandle = p.author?.handle || p.author?.name || '-';
+        const createdLabel = formatDateTime(p.createdAt);
+        const statusText = statusLabel(p.status || 'active');
+        el.innerHTML = `
+          <div class="row-split">
+            <div>
+              <div class="mono muted">#${p.id} · ${createdLabel} · 작성자 ${authorHandle}</div>
+              <div style="margin-top:6px">${p.text?.length>180 ? p.text.slice(0,180)+'…' : (p.text||'(미디어만)')}</div>
+              ${p.status && p.status!=='active'?`<div class="note">상태: ${statusText}</div>`:''}
+            </div>
+            <div class="row-actions">
+              <button class="btn" data-view-post="${p.id}">보기</button>
+              ${p.status!=='removed'
+                ? `<button class="btn danger" data-admin-action="delete-content" data-admin-content-id="${p.id}" data-admin-user-id="${p.author?.id||''}" data-admin-target-handle="${p.author?.handle||''}">삭제</button>`
+                : ''}
+            </div>
+          </div>`;
+        return el;
+      }
+      function filterDemoPosts(items){
+        const statusFilter = $('#postStatus')?.value?.trim().toLowerCase() || '';
+        const query = $('#postQuery')?.value?.trim().toLowerCase() || '';
+        let next = Array.isArray(items) ? [...items] : [];
+        if(statusFilter){
+          next = next.filter(p=> (p.status||'active').toLowerCase()===statusFilter);
+        }
+        if(query){
+          next = next.filter(p=>{
+            const hay = [
+              p.text,
+              p.author?.handle,
+              p.author?.name,
+              p.id,
+            ].filter(Boolean).map(v=> String(v).toLowerCase());
+            return hay.some(val=> val.includes(query));
+          });
+        }
+        return next;
+      }
+      function renderPosts(){
+        const list = $('#postList'); if(!list) return;
+        const source = state.demo ? filterDemoPosts(state.posts) : (state.posts || []);
+        const items = [...source].sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+        list.innerHTML='';
+        items.forEach(p=> list.appendChild(renderPostRow(p)));
+      }
+      async function loadPosts(){
+        try{
+          let data;
+          if(state.demo){
+            state.posts = ensureDemoList(DEMO_KEYS.posts, demoPostsSeed);
+            state.postDetails = {};
+            renderPosts();
+            return;
+          }else{
+            const params = new URLSearchParams();
+            const q=$('#postQuery').value.trim(), st=$('#postStatus').value;
+            if(q) params.set('q',q); if(st) params.set('status',st);
+            const query = params.toString();
+            const url = query ? `/api/admin/posts?${query}` : '/api/admin/posts';
+            data = await fetchJSON(url);
+          }
+          state.posts = data.items||[];
+          state.postDetails = {};
+          renderPosts();
+        }catch(e){
+          console.error('loadPosts failed', e);
+          toast('게시물 목록을 불러오지 못했습니다.');
+        }
+      }
+
+      function sortCommentsDesc(list){
+        return (Array.isArray(list) ? list.slice() : []).sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+      }
+
+      async function fetchPostDetail(postId){
+        if(!postId) return null;
+        if(state.postDetails[postId]) return state.postDetails[postId];
+        if(state.demo){
+          const demoPost = findPostById(postId);
+          if(!demoPost) return null;
+          const detail = { ...demoPost, comments: sortCommentsDesc(demoPost.comments || []) };
+          state.postDetails[postId] = detail;
+          return detail;
+        }
+        const res = await fetchJSON(`/api/admin/posts/${encodeURIComponent(postId)}`);
+        const detail = res?.post ? { ...res.post, comments: sortCommentsDesc(res.post.comments || []) } : null;
+        if(detail) state.postDetails[postId] = detail;
+        return detail;
+      }
+
+      function renderAttachmentBlock(detail){
+        const attachments = Array.isArray(detail.attachments) ? detail.attachments : [];
+        if(!attachments.length) return '';
+        const items = attachments.map((att, idx)=>{
+          if(att.type==='image' && att.url){
+            return `<a href=\"${att.url}\" target=\"_blank\" rel=\"noopener\">이미지 ${idx+1}</a>`;
+          }
+          if(att.type==='video' && att.url){
+            return `<a href=\"${att.url}\" target=\"_blank\" rel=\"noopener\">비디오 ${idx+1}</a>`;
+          }
+          return `<a href=\"${att.url || '#'}\" target=\"_blank\" rel=\"noopener\">${att.filename || att.type || '첨부'}</a>`;
+        }).join('');
+        return `<div class=\"note\" style=\"margin-top:8px\">첨부 ${attachments.length}개</div><div class=\"admin-attachments\">${items}</div>`;
+      }
+
+      function renderCommentAdminRow(comment, postId){
+        const authorLabel = comment.authorType==='guest'
+          ? '게스트'
+          : (comment.author?.handle || comment.author?.name || '사용자');
+        const createdLabel = formatDateTime(comment.createdAt);
+        return `
+          <div class=\"admin-comment-row\" data-comment-id=\"${comment.id}\">
+            <div class=\"meta\"><span>${authorLabel}</span><span>${createdLabel}</span></div>
+            <div class=\"text\">${escapeHtml(comment.text || '(내용 없음)')}</div>
+            <div class=\"row-actions\" style=\"justify-content:flex-end\">
+              <button class=\"btn danger\" data-delete-comment=\"${comment.id}\" data-comment-post=\"${postId}\">삭제</button>
+            </div>
+          </div>`;
+      }
+
+      function renderCommentAdminList(detail){
+        const comments = Array.isArray(detail.comments) ? detail.comments : [];
+        if(!comments.length) return '<div class=\"note\">댓글이 없습니다.</div>';
+        return comments.map((c)=> renderCommentAdminRow(c, detail.id)).join('');
+      }
+
+      function renderPostDetailView(detail){
+        if(!detail) return '<div class=\"note\">게시물을 찾을 수 없습니다.</div>';
+        const authorHandle = detail.author?.handle || detail.author?.name || '-';
+        const createdLabel = formatDateTime(detail.createdAt);
+        const commentCount = Array.isArray(detail.comments) ? detail.comments.length : 0;
+        return `
+          <div class=\"mono muted\">#${detail.id} · ${createdLabel} · 작성자 ${authorHandle} · 상태 ${statusLabel(detail.status || 'active')}</div>
+          <div style=\"margin-top:8px; white-space:pre-wrap\">${escapeHtml(detail.text || '(본문 없음)')}</div>
+          ${renderAttachmentBlock(detail)}
+          <hr style=\"border-color:var(--line); margin:12px 0\"/>
+          <div style=\"font-weight:700; margin-bottom:6px\">댓글 관리 (${commentCount})</div>
+          <div class=\"admin-comment-list\">${renderCommentAdminList(detail)}</div>
+        `;
+      }
+
+      async function openPostDetail(postId){
+        if(!postId) return;
+        const bodyEl = $('#viewBody');
+        $('#viewTitle').textContent = `게시물 #${postId}`;
+        if(bodyEl) bodyEl.innerHTML = '<div class=\"note\">불러오는 중…</div>';
+        openModal('#modal-view');
+        try{
+          const detail = await fetchPostDetail(postId);
+          if(bodyEl) bodyEl.innerHTML = renderPostDetailView(detail);
+        }catch(err){
+          console.error('post detail fetch failed', err);
+          if(bodyEl) bodyEl.innerHTML = '<div class=\"note\">게시물을 불러오지 못했습니다.</div>';
+        }
+      }
+
+      async function handleAdminCommentDelete(commentId, postId){
+        if(!commentId || !postId) return;
+        if(!confirm('댓글을 삭제하시겠습니까?')) return;
+        try{
+          if(state.demo){
+            if(state.postDetails[postId]){
+              state.postDetails[postId].comments = (state.postDetails[postId].comments || []).filter(c=> c.id !== commentId);
+              $('#viewBody').innerHTML = renderPostDetailView(state.postDetails[postId]);
+            }
+            toast('데모 모드: 댓글이 삭제되었습니다.');
+            return;
+          }
+          await fetchJSON(`/api/comments/${encodeURIComponent(commentId)}`, { method:'DELETE', body:{} });
+          if(state.postDetails[postId]){
+            state.postDetails[postId].comments = (state.postDetails[postId].comments || []).filter(c=> c.id !== commentId);
+            $('#viewBody').innerHTML = renderPostDetailView(state.postDetails[postId]);
+          }
+          toast('댓글이 삭제되었습니다.');
+        }catch(err){
+          console.error('comment delete failed', err);
+          const msg = err?.data?.message || '댓글 삭제에 실패했습니다.';
+          toast(msg);
+        }
+      }
+
+      /* ---------- Announcements ---------- */
+      function renderAnnRow(n){
+        const wrap = document.createElement('div');
+        wrap.className='row-card';
+        const createdLabel = formatDateTime(n.createdAt);
+        const bodyText = typeof n.body === 'string' ? n.body : '';
+        const preview = bodyText.length>180 ? bodyText.slice(0,180)+'…' : bodyText;
+        wrap.innerHTML = `
+          <div class="row-split">
+            <div>
+              <div style="font-weight:800">${n.title}</div>
+              <div class="note">${createdLabel} · ${n.pinned?'상단 고정':''}</div>
+              <div style="margin-top:6px">${preview}</div>
+            </div>
+            <div class="row-actions">
+              <button class="btn" data-view-ann="${n.id}">보기</button>
+              <button class="btn" data-edit-ann="${n.id}">수정</button>
+              <button class="btn danger" data-del-ann='${n.id}'>삭제</button>
+            </div>
+          </div>`;
+        return wrap;
+      }
+      function renderAnnouncements(){
+        const list = $('#annList'); if(!list) return;
+        const items = [...(state.notices || [])].sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0));
+        list.innerHTML='';
+        items.forEach(n=> list.appendChild(renderAnnRow(n)));
+        $('#statNotices').textContent = String((state.notices || []).length);
+      }
+      async function loadAnnouncements(){
+        try{
+          let data;
+          if(state.demo){
+            state.notices = ensureDemoList(DEMO_KEYS.announcements, demoAnnouncementsSeed);
+            renderAnnouncements();
+            return;
+          }else{
+            data = await fetchJSON('/api/admin/announcements');
+          }
+          state.notices = data.items||[];
+          renderAnnouncements();
+        }catch(e){ toast('공지 목록을 불러오지 못했습니다.'); }
+      }
+      async function publishAnnouncement(){
+        const title = $('#annTitle').value.trim();
+        const body = $('#annBody').value.trim();
+        const pinned = $('#annPin').checked;
+        if(!title || !body){ toast('제목과 내용을 입력하세요.'); return; }
+        try{
+          if(state.demo){
+            const item = { id:'N-'+Math.random().toString(36).slice(2,7), title, body, pinned, createdAt: nowIso() };
+            state.notices.unshift(item);
+            updateDemoList(DEMO_KEYS.announcements, state.notices);
+            renderAnnouncements();
+          }else{
+            await fetchJSON('/api/admin/announcements', { method:'POST', body: { title, body, pinned } });
+          }
+          $('#annTitle').value=''; $('#annBody').value=''; $('#annPin').checked=false;
+          toast('공지사항이 게시되었습니다.');
+          if(!state.demo) await loadAnnouncements();
+        }catch(e){ toast('공지 게시에 실패했습니다.'); }
+      }
+
+      /* ---------- Superadmin Chat Inspection ---------- */
+      function isSessionSuperAdmin(){
+        return isSuperAdminUser(state.session);
+      }
+      function ensureChatInspectVisibility(){
+        const card = $('#chatInspectCard');
+        if(!card) return;
+        const visible = isSessionSuperAdmin();
+        card.style.display = visible ? 'block' : 'none';
+        if(!visible){
+          const list = $('#chatChannelList');
+          if(list) list.innerHTML = '<div class="note">슈퍼관리자 전용 기능입니다.</div>';
+        }
+      }
+      function matchesChatFilter(channel, keyword){
+        if(!keyword) return true;
+        const targets = [
+          channel?.name,
+          channel?.desc,
+          channel?.type,
+        ];
+        (channel?.members || []).forEach((member)=>{
+          targets.push(member?.handle, member?.name);
+        });
+        return targets.some((value)=> typeof value === 'string' && value.toLowerCase().includes(keyword));
+      }
+      function renderChatChannels(){
+        const list = $('#chatChannelList'); if(!list) return;
+        if(!isSessionSuperAdmin()){
+          list.innerHTML = '<div class="note">슈퍼관리자 전용 기능입니다.</div>';
+          return;
+        }
+        const source = Array.isArray(state.chatChannels) ? state.chatChannels.slice() : [];
+        const query = (state.chatFilter || '').toLowerCase();
+        const filtered = query ? source.filter((item)=> matchesChatFilter(item, query)) : source;
+        if(!filtered.length){
+          list.innerHTML = '<div class="note">표시할 채널이 없습니다.</div>';
+          return;
+        }
+        const rows = filtered.map((channel)=>{
+          const typeLabel = channel.type==='dm' ? '다이렉트' : (channel.type==='group' ? '그룹' : '채널');
+          const timeLabel = channel.lastMessageAt
+            ? formatDateTime(channel.lastMessageAt)
+            : (channel.createdAt ? formatDateTime(channel.createdAt) : '-');
+          const memberSummary = (channel.members||[])
+            .map((member)=> member?.handle || member?.name || member?.id)
+            .filter(Boolean)
+            .slice(0,4)
+            .map((label)=> escapeHtml(label))
+            .join(', ');
+          const preview = channel.lastMessagePreview
+            ? escapeHtml(channel.lastMessagePreview)
+            : '최근 메시지 없음';
+          return `
+            <div class="chat-row">
+              <div>
+                <div style="font-weight:700">${escapeHtml(channel.name || '채널')}</div>
+                <div class="meta">${typeLabel} · 구성원 ${channel.memberCount || 0}명 · 최근 ${timeLabel}</div>
+                <div class="note">${memberSummary || '구성원 정보 없음'}</div>
+                <div class="note">${preview}</div>
+              </div>
+              <div class="row-actions">
+                <button class="btn" data-chat-view="${channel.id}">열람</button>
+              </div>
+            </div>`;
+        }).join('');
+        list.innerHTML = rows;
+      }
+      async function loadChatChannels(){
+        const list = $('#chatChannelList');
+        if(state.demo){
+          if(list) list.innerHTML = '<div class="note">데모 모드에서는 채팅 검사를 사용할 수 없습니다.</div>';
+          return;
+        }
+        if(!isSessionSuperAdmin()){
+          renderChatChannels();
+          return;
+        }
+        if(list) list.innerHTML = '<div class="note">불러오는 중…</div>';
+        try{
+          const res = await fetchJSON('/api/admin/chat/channels');
+          state.chatChannels = Array.isArray(res?.items) ? res.items : [];
+          renderChatChannels();
+        }catch(err){
+          console.error('chat channels load failed', err);
+          const message = err?.data?.message || '채팅 채널을 불러오지 못했습니다.';
+          if(list) list.innerHTML = `<div class="note">${escapeHtml(message)}</div>`;
+        }
+      }
+      async function openChatModal(channelId){
+        if(!channelId) return;
+        if(!isSessionSuperAdmin()){
+          toast('슈퍼관리자 전용 기능입니다.');
+          return;
+        }
+        const bodyEl = $('#chatModalBody');
+        const titleEl = $('#chatModalTitle');
+        if(titleEl) titleEl.textContent = '채팅 검사';
+        if(bodyEl) bodyEl.innerHTML = '<div class="note">불러오는 중…</div>';
+        openModal('#modal-chat');
+        try{
+          const data = await fetchJSON(`/api/admin/chat/channels/${encodeURIComponent(channelId)}?limit=200`);
+          renderChatModal(data?.channel, Array.isArray(data?.messages) ? data.messages : []);
+        }catch(err){
+          console.error('chat modal load failed', err);
+          const message = err?.data?.message || '채팅을 불러오지 못했습니다.';
+          if(bodyEl) bodyEl.innerHTML = `<div class="note">${escapeHtml(message)}</div>`;
+        }
+      }
+      function renderChatModal(channel, messages){
+        const bodyEl = $('#chatModalBody');
+        const titleEl = $('#chatModalTitle');
+        if(titleEl) titleEl.textContent = channel?.name ? `채팅 검사 · ${channel.name}` : '채팅 검사';
+        if(!bodyEl){
+          return;
+        }
+        if(!channel){
+          bodyEl.innerHTML = '<div class="note">채널을 찾을 수 없습니다.</div>';
+          return;
+        }
+        const typeLabel = channel.type==='dm' ? '다이렉트 채팅' : (channel.type==='group' ? '그룹 채팅' : '채널');
+        const memberSummary = (channel.members||[])
+          .map((member)=> member?.handle || member?.name || member?.id)
+          .filter(Boolean)
+          .map((label)=> escapeHtml(label))
+          .join(', ');
+        const header = `
+          <div style="margin-bottom:10px">
+            <div style="font-weight:800">${escapeHtml(channel.name || '채널')}</div>
+            <div class="note">${typeLabel} · 구성원 ${channel.memberCount || 0}명</div>
+            <div class="note" style="margin-top:4px">${memberSummary || '구성원 정보 없음'}</div>
+          </div>`;
+        if(!messages.length){
+          bodyEl.innerHTML = header + '<div class="note">표시할 메시지가 없습니다.</div>';
+          return;
+        }
+        const entries = messages.map((msg)=>{
+          const authorLabel = escapeHtml(msg.author?.handle || msg.author?.name || '알 수 없음');
+          const timeLabel = formatDateTime(msg.createdAt);
+          const textHtml = escapeHtml(msg.text || '(내용 없음)').replace(/\n/g,'<br/>');
+          return `<div class="chat-log-entry"><div class="meta"><span>${authorLabel}</span><span>${timeLabel}</span></div><div class="text">${textHtml}</div></div>`;
+        }).join('');
+        bodyEl.innerHTML = header + `<div class="chat-log">${entries}</div>`;
+      }
+      async function deleteAnnouncement(annId){
+        if(!annId) return;
+        if(!confirm('해당 공지사항을 삭제하시겠습니까?')) return;
+        try{
+          if(state.demo){
+            state.notices = (state.notices || []).filter(n=> n.id !== annId);
+            updateDemoList(DEMO_KEYS.announcements, state.notices);
+            renderAnnouncements();
+            toast('공지사항이 삭제되었습니다.');
+            return;
+          }
+          await fetchJSON(`/api/admin/announcements/${encodeURIComponent(annId)}`, { method:'DELETE' });
+          toast('공지사항이 삭제되었습니다.');
+          await loadAnnouncements();
+        }catch(err){
+          console.error('announcement delete failed', err);
+          const message = err?.data?.message || '공지 삭제에 실패했습니다.';
+          toast(message);
+        }
+      }
+
+      /* ---------- System: registration mode & referral codes ---------- */
+      async function loadSystemConfig(){
+        if(state.demo){
+          state.regMode = localStorage.getItem('looma:regMode') || 'open';
+          state.basicWriteLimit = localStorage.getItem('looma:writeLimit') === 'on';
+          try{ state.codes = JSON.parse(localStorage.getItem('looma:refCodes')||'[]'); }catch{ state.codes=[]; }
+          applyRegModeUI();
+          applyWriteLimitUI();
+          renderCodes();
+          return;
+        }
+        try{
+          const data = await fetchJSON('/api/admin/system');
+          state.regMode = data?.config?.registrationMode || 'open';
+          state.basicWriteLimit = !!data?.config?.basicPostingRestricted;
+          state.codes = Array.isArray(data?.referralCodes) ? data.referralCodes : [];
+          applyRegModeUI();
+          applyWriteLimitUI();
+          renderCodes();
+        }catch(err){
+          toast('시스템 구성을 불러오지 못했습니다.');
+        }
+      }
+      function applyRegModeUI(){
+        $$('input[name="regMode"]').forEach(r=> r.checked = (r.value===state.regMode));
+        $('#inviteMgmt').style.display = state.regMode==='invite' ? 'block' : 'none';
+      }
+      function applyWriteLimitUI(){
+        const toggle = $('#writeLimitToggle');
+        if(toggle) toggle.checked = !!state.basicWriteLimit;
+        const status = $('#writeLimitStatus');
+        if(status){
+          status.textContent = state.basicWriteLimit
+            ? '현재 관리자만 게시물과 댓글을 작성할 수 있습니다.'
+            : '모든 사용자가 게시물과 댓글을 작성할 수 있습니다.';
+        }
+      }
+      function renderCodes(){
+        const tb = $('#codeTable tbody'); tb.innerHTML='';
+        const now = Date.now();
+        state.codes.forEach(c=>{
+          const tr = document.createElement('tr');
+          const expiresMs = c.expiresAt ? new Date(c.expiresAt).getTime() : null;
+          const expired = expiresMs ? now>expiresMs : false;
+          const limitValue = typeof c.limit === 'number' ? c.limit : (String(c.limit||'').toLowerCase()==='unlimited' ? 'unlimited' : null);
+          const usedUp = limitValue !== null && limitValue !== 'unlimited' && c.used >= Number(limitValue);
+          const status = expired ? '만료' : (usedUp ? '소진' : (c.revoked?'철회':'사용 가능'));
+          tr.innerHTML = `
+            <td class="mono">${c.code}</td>
+            <td>${formatDateTime(c.createdAt)}</td>
+            <td>${c.expiresAt? formatDateTime(c.expiresAt):'-'}</td>
+            <td>${c.used}/${limitValue==='unlimited'?'∞':(limitValue??'∞')}</td>
+            <td>${status}</td>
+            <td style="text-align:right">
+              <button class="btn" data-copy="${c.code}">복사</button>
+              ${c.revoked? '' : `<button class="btn danger" data-revoke="${c.code}">철회</button>`}
+            </td>`;
+          tb.appendChild(tr);
+        });
+      }
+
+      /* ---------- Actions ---------- */
+      function openActionModal(context){
+        state.actionContext = { ...context };
+        $('#actionTitle').textContent = '관리자 조치';
+        const target = $('#actionTarget');
+        const summary = describeActionContext(context);
+        const ctxJson = JSON.stringify(context, null, 2);
+        const display = [summary, ctxJson].filter(Boolean).join('\n');
+        target.textContent = display || ctxJson || '대상 정보 없음';
+        target.setAttribute('data-context', ctxJson || '');
+        $('#actionType').value = context.action || 'dismiss';
+        state.actionContext.action = $('#actionType').value;
+        const reasonEl = $('#actionReason');
+        const suggested = suggestReason(context);
+        reasonEl.value = suggested || '';
+        $('#actionDuration').value = '7d';
+        $('#actionDurationCustom').classList.add('hidden');
+        $('#durationRow').classList.toggle('hidden', $('#actionType').value!=='suspend');
+        refreshActionPinRow($('#actionType').value);
+        openModal('#modal-action');
+        if(!suggested){
+          setTimeout(()=> reasonEl.focus(), 0);
+        }
+      }
+      $('#actionType').addEventListener('change', ()=>{
+        const currentValue = $('#actionType').value;
+        $('#durationRow').classList.toggle('hidden', currentValue!=='suspend');
+        if(state.actionContext) state.actionContext.action = currentValue;
+        refreshActionPinRow(currentValue);
+      });
+      $('#actionDuration').addEventListener('change', ()=>{
+        const custom = $('#actionDuration').value==='custom';
+        $('#actionDurationCustom').classList.toggle('hidden', !custom);
+      });
+      async function doAction(){
+        const actionBtn = $('#actionDo');
+        const type = $('#actionType').value;
+        const reason = $('#actionReason').value.trim();
+        if(!reason){ toast('조치 사유를 입력하세요.'); return; }
+        let duration = null;
+        if(type==='suspend'){
+          duration = $('#actionDuration').value==='custom' ? $('#actionDurationCustom').value.trim() : $('#actionDuration').value;
+          if(!duration){ toast('정지 기간을 입력하세요.'); return; }
+        }
+        const needsPin = shouldRequireSuperPin(type);
+        const pinInput = $('#actionPin');
+        const pinValue = needsPin ? (pinInput?.value || '').trim() : '';
+        if(needsPin && !/^[0-9]{4}$/.test(pinValue)){
+          toast('슈퍼관리자 PIN 4자리를 입력하세요.');
+          pinInput?.focus();
+          return;
+        }
+        if(state.demo && needsPin && pinValue !== SUPERADMIN_PIN_CODE){
+          toast('슈퍼관리자 PIN이 일치하지 않습니다.');
+          pinInput?.focus();
+          return;
+        }
+        const baseContext = state.actionContext || {};
+        const payload = { ...baseContext, action:type, reason, duration };
+        if(needsPin) payload.pin = pinValue;
+        const targetsToReload = new Set();
+        if(payload.reportId) targetsToReload.add('reports');
+        if(payload.userId) targetsToReload.add('users');
+        if(payload.contentId) targetsToReload.add('posts');
+        actionBtn.disabled = true;
+        try{
+          if(state.demo){
+            if(payload.userId){
+              const u = state.users.find(x=>x.id===payload.userId);
+              if(u){
+                if(type==='ban'){ u.status='banned'; }
+                else if(type==='suspend'){ u.status='suspended'; }
+                else if(type==='deactivate'){ u.status='inactive'; }
+                else if(type==='dismiss'){ u.status='active'; }
+                else if(type==='make-admin'){ u.role='admin'; }
+                else if(type==='remove-admin'){ u.role='user'; u.isSuperAdmin = false; }
+                updateDemoList(DEMO_KEYS.users, state.users);
+                renderUsers();
+              }
+            }
+            if(payload.reportId){
+              const r = state.reports.find(x=>x.id===payload.reportId);
+              if(r){
+                r.status = type==='delete-content' ? 'closed' : 'closed';
+                updateDemoList(DEMO_KEYS.reports, state.reports);
+                renderReports();
+              }
+            }
+            if(payload.contentId){
+              const p = state.posts.find(x=>x.id===payload.contentId);
+              if(p && type==='delete-content'){
+                p.status='removed';
+                updateDemoList(DEMO_KEYS.posts, state.posts);
+                renderPosts();
+              }
+            }
+          }else{
+            await fetchJSON('/api/admin/actions', { method:'POST', body: payload });
+            const reloads = [];
+            if(targetsToReload.has('reports')) reloads.push(loadReports());
+            if(targetsToReload.has('users')) reloads.push(loadUsers());
+            if(targetsToReload.has('posts')) reloads.push(loadPosts());
+            if(reloads.length) await Promise.all(reloads);
+          }
+          closeModal('#modal-action'); toast('조치가 적용되었습니다.');
+        }catch(e){
+          const data = e?.data;
+          if(e?.status===403){
+            const errorCode = typeof data === 'object' ? data?.error : null;
+            if(errorCode === 'superadmin-pin-required' || errorCode === 'superadmin-pin-invalid'){
+              refreshActionPinRow(type);
+              const pinInput = $('#actionPin');
+              toast((typeof data === 'object' && data?.message) || '슈퍼관리자 PIN이 필요합니다.');
+              pinInput?.focus();
+            }else{
+              toast('권한이 없습니다. 슈퍼관리자 계정으로 다시 로그인해 주세요.');
+            }
+          }else{
+            const message = typeof data === 'string'
+              ? data
+              : (data && typeof data.message === 'string'
+                ? data.message
+                : (data && typeof data.error === 'string' ? data.error : null));
+            toast(message || '조치 수행에 실패했습니다.');
+          }
+          console.error('admin action failed', e);
+        }
+        actionBtn.disabled = false;
+      }
+
+      /* ---------- Bindings ---------- */
+      function bind(){
+        // report filters
+        $('#btnReloadReports').addEventListener('click', loadReports);
+        $('#filterType').addEventListener('change', loadReports);
+        $('#filterStatus').addEventListener('change', loadReports);
+        $('#filterQuery').addEventListener('keydown', e=>{ if(e.key==='Enter') loadReports(); });
+        // user
+        $('#btnSearchUsers').addEventListener('click', loadUsers);
+        $('#btnReloadUsers').addEventListener('click', loadUsers);
+        $('#userQuery').addEventListener('keydown', e=>{ if(e.key==='Enter') loadUsers(); });
+        // posts
+        $('#btnSearchPosts').addEventListener('click', loadPosts);
+        $('#btnReloadPosts').addEventListener('click', loadPosts);
+        $('#postQuery').addEventListener('keydown', e=>{ if(e.key==='Enter') loadPosts(); });
+        const writeToggle = $('#writeLimitToggle');
+        if(writeToggle){
+          writeToggle.addEventListener('change', ()=>{
+            state.basicWriteLimit = !!writeToggle.checked;
+            applyWriteLimitUI();
+          });
+        }
+        $('#btnSaveWriteLimit').addEventListener('click', async ()=>{
+          try{
+            if(state.demo){
+              localStorage.setItem('looma:writeLimit', state.basicWriteLimit ? 'on' : 'off');
+              toast('작성 제한 설정이 저장되었습니다.');
+            }else{
+              await fetchJSON('/api/admin/system', { method:'POST', body:{ basicPostingRestricted: state.basicWriteLimit } });
+              toast('작성 제한 설정이 저장되었습니다.');
+              await loadSystemConfig();
+            }
+          }catch(err){
+            console.error('write limit save failed', err);
+            toast('작성 제한 저장에 실패했습니다.');
+          }
+        });
+        // announcements
+        $('#btnPublish').addEventListener('click', publishAnnouncement);
+        $('#btnReloadChat')?.addEventListener('click', loadChatChannels);
+        const chatSearchInput = $('#chatSearch');
+        if(chatSearchInput){
+          chatSearchInput.addEventListener('input', ()=>{
+            state.chatFilter = chatSearchInput.value.trim().toLowerCase();
+            renderChatChannels();
+          });
+        }
+        // action delegates (reports/users/posts/ann)
+        document.addEventListener('click', async (e)=>{
+          const viewId = e.target.closest('[data-view]')?.getAttribute('data-view');
+          if(viewId){
+            const r = state.reports.find(x=>x.id===viewId);
+            if(r){
+              const target = r.target || {};
+              const targetType = target.type || '미지정';
+              const targetHandle = target.handle || '-';
+              const targetUser = target.userId || '-';
+              const detail = r.detail || '상세 내용(서버 제공)';
+              $('#viewTitle').textContent = `신고 #${r.id}`;
+              $('#viewBody').innerHTML = `
+                <div class="mono muted">대상: ${targetType} · 작성자: ${targetHandle} (${targetUser})</div>
+                ${r.reason?`<div class="note" style="margin-top:6px">사유: ${r.reason}</div>`:''}
+                <div style="margin-top:8px; white-space:pre-wrap">${detail}</div>`;
+              openModal('#modal-view');
+            }
+          }
+          const viewPost = e.target.closest('[data-view-post]')?.getAttribute('data-view-post');
+          if(viewPost){
+            await openPostDetail(viewPost);
+            return;
+          }
+          const annId = e.target.closest('[data-view-ann]')?.getAttribute('data-view-ann');
+          if(annId){
+            const n = state.notices.find(x=>x.id===annId);
+            if(n){
+              $('#viewTitle').textContent = '공지 보기';
+              $('#viewBody').innerHTML = `<div style="font-weight:800">${n.title}</div><div class="note">${formatDateTime(n.createdAt)} · ${n.pinned?'상단 고정':''}</div><hr style="border-color:var(--line)"/><div style="white-space:pre-wrap">${n.body}</div>`;
+              openModal('#modal-view');
+            }
+          }
+          const delAnnId = e.target.closest('[data-del-ann]')?.getAttribute('data-del-ann');
+          if(delAnnId){
+            await deleteAnnouncement(delAnnId);
+            return;
+          }
+          const chatView = e.target.closest('[data-chat-view]')?.getAttribute('data-chat-view');
+          if(chatView){
+            await openChatModal(chatView);
+            return;
+          }
+          const actionEl = e.target.closest('[data-admin-action]');
+          if(actionEl){
+            const ctx = extractActionContext(actionEl);
+            if(ctx){ openActionModal(ctx); }
+            return;
+          }
+          const delCommentBtn = e.target.closest('[data-delete-comment]');
+          if(delCommentBtn){
+            const commentId = delCommentBtn.getAttribute('data-delete-comment');
+            const postId = delCommentBtn.getAttribute('data-comment-post');
+            await handleAdminCommentDelete(commentId, postId);
+            return;
+          }
+
+          const copyCode = e.target.closest('[data-copy]')?.getAttribute('data-copy');
+          if(copyCode){ navigator.clipboard?.writeText(copyCode).then(()=>toast('코드가 복사되었습니다.')); }
+          const revoke = e.target.closest('[data-revoke]')?.getAttribute('data-revoke');
+          if(revoke){
+            const c = state.codes.find(x=>x.code===revoke);
+            if(!c) return;
+            if(state.demo){
+              c.revoked = true;
+              localStorage.setItem('looma:refCodes', JSON.stringify(state.codes));
+              renderCodes();
+              toast('코드가 철회되었습니다.');
+            }else{
+              try{
+                await fetchJSON('/api/admin/refcodes/revoke',{ method:'POST', body:{ code: revoke } });
+                c.revoked = true;
+                renderCodes();
+                toast('코드가 철회되었습니다.');
+              }catch(err){
+                toast('코드 철회에 실패했습니다.');
+              }
+            }
+          }
+        });
+
+        // system
+        $$('input[name="regMode"]').forEach(r=> r.addEventListener('change', ()=>{
+          state.regMode = r.value; applyRegModeUI();
+        }));
+        $('#btnSaveRegMode').addEventListener('click', async ()=>{
+          try{
+            if(state.demo){
+              localStorage.setItem('looma:regMode', state.regMode);
+              toast('가입 모드가 저장되었습니다.');
+            }else{
+              const res = await fetchJSON('/api/admin/system', { method:'POST', body:{ regMode: state.regMode } });
+              if(res?.config){
+                state.regMode = res.config.registrationMode || state.regMode;
+              }
+              toast('가입 모드가 저장되었습니다.');
+              await loadSystemConfig();
+            }
+          }catch(e){ toast('저장 실패'); }
+        });
+        $('#btnGenerate').addEventListener('click', async ()=>{
+          const prefix = $('#codePrefix').value.trim();
+          const exp = $('#codeExp').value; // '3d','7d','30d'
+          const lim = $('#codeLimit').value; // '1','3','10','unlimited'
+          if(state.demo){
+            const map={ '3d':3, '7d':7, '30d':30 };
+            let expiresAt = null;
+            if(map[exp]) expiresAt = Date.now() + map[exp]*86400000;
+            const code = (prefix? (prefix.toUpperCase()+'-') : '') + Math.random().toString(36).slice(2,8).toUpperCase();
+            state.codes.unshift({ code, createdAt: Date.now(), expiresAt, limit: lim, used:0, revoked:false });
+            localStorage.setItem('looma:refCodes', JSON.stringify(state.codes));
+            renderCodes();
+            toast('추천인 코드가 생성되었습니다.');
+            return;
+          }
+          try{
+            const body = { prefix };
+            if(exp) body.expiresIn = exp;
+            if(lim) body.limit = lim;
+            const res = await fetchJSON('/api/admin/refcodes', { method:'POST', body });
+            if(res?.code){
+              state.codes.unshift(res.code);
+              renderCodes();
+            }
+            toast('추천인 코드가 생성되었습니다.');
+          }catch(err){
+            toast('추천인 코드 생성에 실패했습니다.');
+          }
+        });
+      }
+
+      /* ---------- Init ---------- */
+      async function init(){
+        const ok = await loadSession(); if(!ok) return;
+        bind();
+        await loadSystemConfig();
+        const tasks = [loadReports(), loadUsers(), loadPosts(), loadAnnouncements()];
+        if(!state.demo && isSessionSuperAdmin()) tasks.push(loadChatChannels());
+        await Promise.all(tasks);
+        if(state.demo && isSessionSuperAdmin()){
+          renderChatChannels();
+        }
+      }
+      init();
+
+      // expose actionDo
+      document.getElementById('actionDo').addEventListener('click', doAction);
+      // logout
+      document.getElementById('btnLogout')?.addEventListener('click', async ()=>{
+        try{ await fetchJSON('/api/logout',{method:'POST', body:{}}); }catch(_){}
+        location.href='auth.html';
+      });
+    })();
+  </script>
+</body>
+</html>

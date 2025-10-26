@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="ko" data-theme="auto">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Looma — Terms of Service</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Peta:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet"/>
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0A0A0A">
+
+  <!-- Theme bootstrap (notices와 동일) -->
+  <script>
+    (function(){
+      try{
+        var root = document.documentElement;
+        var theme = localStorage.getItem('looma:theme');
+        if(theme !== 'light' && theme !== 'dark'){ theme = 'auto'; }
+        if(theme === 'auto'){ root.removeAttribute('data-theme'); }
+        else{ root.setAttribute('data-theme', theme); }
+        root.dataset.themePreference = theme;
+      }catch(err){ /* ignore */ }
+    })();
+  </script>
+  <script src="theme.js"></script>
+
+  <style>
+    :root{
+      --bg:#0A0A0A; --surface:#111213; --elev:#151618; --line:#1E2023;
+      --text:#EDEFF2; --muted:#9AA3AE; --brand:#0EA5E9;
+      --radius:14px; --shadow:0 8px 18px rgba(0,0,0,.18); --speed:.18s;
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+        --text:#0B1220; --muted:#596174; --brand:#0077FF;
+        --shadow:0 10px 22px rgba(10,16,30,.08);
+      }
+    }
+    *{ box-sizing:border-box }
+    html, body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.6 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    a{ color:inherit; text-decoration:none }
+    button{ font:inherit; border:0; background:none; color:inherit; cursor:pointer }
+
+    .page{ min-height:100dvh; display:flex; flex-direction:column }
+    .topbar{
+      position:sticky; top:0; z-index:20;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px; border-bottom:1px solid var(--line); background:var(--surface);
+      backdrop-filter:blur(12px);
+    }
+    .topbar .brand{ font-family:"Lexend Peta"; font-weight:800; letter-spacing:.4px }
+    .topbar .left{ display:flex; align-items:center; gap:10px }
+    .circle-btn{
+      width:34px; height:34px; border-radius:50%; border:1px solid var(--line);
+      display:grid; place-items:center; background:var(--elev);
+      transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .circle-btn:hover{ background:var(--brand); border-color:transparent; color:#fff; transform:translateY(-1px); }
+
+    main{
+      flex:1; padding:20px 16px 48px; max-width:820px; margin:0 auto; width:100%;
+      display:grid; gap:16px;
+    }
+
+    /* notices 카드 스타일 재사용 */
+    .section-card{
+      border:1px solid var(--line); border-radius:16px; background:var(--surface);
+      padding:18px; display:grid; gap:10px; box-shadow:var(--shadow);
+      transition: transform var(--speed), border-color var(--speed);
+    }
+    .section-card:hover{ transform:translateY(-2px); }
+    .sec-title{ font-size:18px; font-weight:800; }
+    .sec-meta{ color:var(--muted); font-size:12px }
+    .sec-body{ white-space:pre-wrap; line-height:1.55 }
+    .badge{
+      display:inline-flex; align-items:center; gap:6px; padding:4px 8px;
+      border-radius:999px; background:rgba(14,165,233,.12); color:var(--brand);
+      font-size:12px; font-weight:700;
+    }
+    .toc{
+      display:flex; flex-wrap:wrap; gap:8px;
+    }
+    .toc a{
+      border:1px solid var(--line); background:var(--elev); padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px;
+    }
+    .empty{ text-align:center; padding:32px 0; color:var(--muted); border:1px dashed var(--line); border-radius:12px }
+    .muted{ color:var(--muted) }
+    .mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace }
+    .hidden{ display:none !important }
+
+    @media (max-width:640px){
+      main{ padding:16px 12px 36px; }
+      .section-card{ padding:16px; border-radius:14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="left">
+        <a href="home.html" data-nav class="circle-btn" aria-label="뒤로"><i class="ri-arrow-left-line"></i></a>
+        <div class="brand">이용약관</div>
+      </div>
+      <a href="superadmin.html" data-nav class="circle-btn" aria-label="관리자"><i class="ri-shield-star-line"></i></a>
+    </header>
+
+    <main>
+      <!-- 개요/버전 -->
+      <article class="section-card">
+        <div class="sec-title">Looma 이용약관</div>
+        <div class="sec-meta">운영주체: Looma by Luminary Labs · 본 서비스는 현재 무료로 제공됩니다.</div>
+        <div class="sec-body">
+          본 약관은 Looma 채팅 서비스(이하 “서비스”)의 이용과 관련하여 Looma by Luminary Labs(이하 "서비스 단체, 기업이 아닙니다")와 이용자 간의 권리·의무 및 책임사항, 서비스 이용조건과 절차 등을 규정합니다.
+          서비스는 안전하고 지속가능한 운영을 목표로 하며, 커뮤니티 보호를 위해 계정 정지·영구정지·비활성화·삭제 등의 안전운영 조치를 시행할 수 있습니다.
+        </div>
+        <div class="toc" aria-label="목차">
+          <a href="#s1">1. 약관의 효력 및 변경</a>
+          <a href="#s2">2. 계정 및 자격 요건</a>
+          <a href="#s3">3. 게스트(비로그인) 댓글</a>
+          <a href="#s4">4. 사용자 콘텐츠와 권리</a>
+          <a href="#s5">5. 금지행위</a>
+          <a href="#s6">6. 신고·조치(정지/삭제 등)</a>
+          <a href="#s7">7. 서비스 제공, 변경 및 중단</a>
+          <a href="#s8">8. 개인정보·보안</a>
+          <a href="#s9">9. 제3자 서비스</a>
+          <a href="#s10">10. 지적재산권</a>
+          <a href="#s11">11. 보증의 부인과 책임 제한</a>
+          <a href="#s12">12. 손해배상</a>
+          <a href="#s13">13. 준거법 및 관할</a>
+          <a href="#s14">14. 약관 개정</a>
+          <a href="#s15">15. 문의</a>
+        </div>
+      </article>
+
+      <!-- 1 -->
+      <article id="s1" class="section-card">
+        <div class="sec-title">1. 약관의 효력 및 변경</div>
+        <div class="sec-body">
+- 본 약관은 서비스를 이용하는 모든 이용자에게 적용됩니다.
+- 회사는 관련 법령을 위반하지 않는 범위에서 약관을 개정할 수 있습니다. 개정 시 개정 내용과 시행일자를 최소 7일 전(이용자에게 불리한 경우 30일 전) 서비스 내 공지사항 페이지에 게시합니다.
+- 이용자가 시행일 이후에도 서비스를 계속 이용하는 경우, 개정 약관에 동의한 것으로 봅니다.
+        </div>
+      </article>
+
+      <!-- 2 -->
+      <article id="s2" class="section-card">
+        <div class="sec-title">2. 계정 및 자격 요건</div>
+        <div class="sec-body">
+- 가입 자격: 만 10세 이상인 자에 한해 계정을 생성할 수 있습니다. Looma는 결제와 같은 과금기능이 존재하지 않음으로, 법정대리인 동의가 없어도 가입이 가능합니다. 허나, 책임 능력이 없는 만 10세 이하의 피이용자의 경우 법정대리인이 책임을 지게 됩니다.
+- 정확한 정보: 이용자는 가입 및 이용 과정에서 정확하고 최신의 정보를 제공·유지해야 합니다.
+- 계정 보안: 비밀번호 등 인증정보는 이용자가 보호해야 하며, 계정의 무단 사용이 의심될 경우 즉시 회사에 알려야 합니다.
+- 추천인 코드 모드: 서비스 안전을 위해 필요 시 회사는 신규 가입을 “추천인 코드 필수”로 전환할 수 있습니다. 전환 시 공지사항에 사전 안내합니다.
+- 관리자/슈퍼관리자: 회사는 운영상 필요에 따라 특정 계정에 관리자 권한을 부여·해제할 수 있습니다.
+        </div>
+      </article>
+
+      <!-- 3 -->
+      <article id="s3" class="section-card">
+        <div class="sec-title">3. 게스트(비로그인) 댓글</div>
+        <div class="sec-body">
+- 비로그인 이용자는 게시물 당 최대 1회에 한하여 임시 비밀번호(4자리 PIN)로 댓글을 작성할 수 있습니다.
+- 임시 PIN은 댓글 수정/삭제 본인확인 용도로만 사용되며, 브라우저를 재설치/초기화해도 임시 댓글 권한이 남용되지 않도록 제한 장치가 적용될 수 있습니다.
+- 서비스 안전 상태 또는 운영정책에 따라 게스트 댓글 기능은 사전 고지 후 일시 중단·종료될 수 있습니다.
+        </div>
+      </article>
+
+      <!-- 4 -->
+      <article id="s4" class="section-card">
+        <div class="sec-title">4. 사용자 콘텐츠와 권리</div>
+        <div class="sec-body">
+- 소유권: 이용자가 게시하는 텍스트·이미지·영상·투표 등(“콘텐츠”)의 저작권은 원칙적으로 이용자에게 귀속됩니다.
+- 라이선스 부여: 이용자는 서비스를 운영·개선·표시·배포(서비스 내 표시 한정)하기 위해 필요한 범위에서 자신의 콘텐츠를 전 세계적·비독점적·무상으로 사용할 수 있는 권리를 회사에 허여합니다. 이용자가 콘텐츠를 삭제하면 합리적 기간 내에 서비스 내 표시도 중단됩니다(백업/법적 보관은 예외).
+- 제3자의 권리: 이용자는 자신의 콘텐츠가 타인의 권리를 침해하지 않도록 보증합니다. 권리침해 신고가 접수되면 회사는 관련 법령 및 정책에 따라 조치할 수 있습니다.
+        </div>
+      </article>
+
+      <!-- 5 -->
+      <article id="s5" class="section-card">
+        <div class="sec-title">5. 금지행위</div>
+        <div class="sec-body">
+다음 행위는 금지됩니다.
+1) 불법·유해 콘텐츠 게시(명예훼손, 혐오·차별·폭력 선동, 음란물, 스팸·사기 등)  
+2) 타인 사칭, 개인정보 또는 계정 도용, 무단 수집·크롤링  
+3) 서비스 또는 서버·네트워크에 대한 장애 유발·우회·변조 시도  
+4) 자동화 도구를 통한 과도한 요청·팔로워/좋아요 조작 등 비정상 사용  
+5) R2 등 저장소 정책을 우회하는 과도한 대용량 업로드, 저작권 위반 파일 배포  
+6) 기타 관련 법령, 커뮤니티 가이드, 본 약관에 위반되는 행위
+        </div>
+      </article>
+
+      <!-- 6 -->
+      <article id="s6" class="section-card">
+        <div class="sec-title">6. 신고·조치(정지/삭제 등)</div>
+        <div class="sec-body">
+- 신고: 누구나 서비스 내 신고 기능을 통해 위반 의심 콘텐츠·사용자를 신고할 수 있습니다.  
+- 검토 및 조치: 회사는 신고 접수 또는 모니터링 결과에 따라 경고, 콘텐츠 삭제, 노출 제한, 계정 정지(기간), 영구정지, 비활성화, 삭제 등 필요한 조치를 취할 수 있습니다.  
+- 사유 고지: 조치 시 이용자는 로그인 과정(auth.html 등)에서 주요 사유를 확인할 수 있습니다.  
+- 이의 제기: 이용자는 합리적 기간 내 이의 제기를 요청할 수 있으며, 관리자는 재검토 후 결과를 안내합니다.  
+- 긴급 조치: 심각한 위험이 예상되는 경우 즉시 차단·정지 등 임시 조치를 취할 수 있습니다.
+        </div>
+      </article>
+
+      <!-- 7 -->
+      <article id="s7" class="section-card">
+        <div class="sec-title">7. 서비스 제공, 변경 및 중단</div>
+        <div class="sec-body">
+- 서비스는 현재 무료로 제공됩니다. 향후 일부 기능에 대해 과금 또는 광고가 도입될 수 있으며, 그 경우 사전 공지합니다.
+- 회사는 운영상·기술상 필요에 따라 기능을 추가·변경·중단할 수 있습니다. 중대한 변경 또는 중단 시 사전 고지합니다.
+- 점검 또는 장애 복구 중 서비스 이용이 일시 중단될 수 있습니다.
+        </div>
+      </article>
+
+      <!-- 8 -->
+      <article id="s8" class="section-card">
+        <div class="sec-title">8. 개인정보·보안</div>
+        <div class="sec-body">
+- 회사는 서비스 안전 운영을 위해 IP 주소 보존, 무결성 확인(예: 전화번호 무작위 무결성 확인), 위치 정보의 제한적 활용(무작위 샘플링·부정행위 방지 목적) 등의 보안 시스템을 적용할 수 있습니다. 구체적 수집·이용 항목과 보관 기간, 이용자 권리는 개인정보 처리방침(privacy.html)에 따릅니다.
+- 부정행위 탐지를 위해 기기 식별 정보, 접속 로그 등이 활용될 수 있습니다.
+- 법령이 요구하는 경우를 제외하고, 회사는 이용자의 동의 없이 목적 외로 정보를 사용하지 않습니다.
+        </div>
+      </article>
+
+      <!-- 9 -->
+      <article id="s9" class="section-card">
+        <div class="sec-title">9. 제3자 서비스</div>
+        <div class="sec-body">
+서비스는 저장소·인증 등 외부 제공자(예: 클라우드 저장소, 인증/이메일 발송 서비스 등)와 연동될 수 있습니다. 제3자 서비스의 이용에는 해당 제공자의 약관·정책이 적용되며, 회사는 합리적 통제 범위를 넘어 발생한 손해에 대해 책임을 지지 않습니다.
+        </div>
+      </article>
+
+      <!-- 10 -->
+      <article id="s10" class="section-card">
+        <div class="sec-title">10. 지적재산권</div>
+        <div class="sec-body">
+서비스 및 그 소프트웨어·디자인·로고(LOOMA 상표 포함)에 대한 권리는 정당한 권리자에게 귀속됩니다. 약관에서 달리 정하지 않는 한, 이용자는 서비스 또는 그 구성요소를 복제·변형·배포·역설계할 수 없습니다.
+        </div>
+      </article>
+
+      <!-- 11 -->
+      <article id="s11" class="section-card">
+        <div class="sec-title">11. 보증의 부인과 책임 제한</div>
+        <div class="sec-body">
+- 서비스는 “있는 그대로(AS IS)” 및 “제공 가능한 범위(AS AVAILABLE)”로 제공됩니다. 회사는 서비스의 정확성·신뢰성·무중단 가용성에 대해 법이 허용하는 범위 내에서 명시적·묵시적 보증을 하지 않습니다.
+- 회사는 이용자의 귀책 또는 불가항력(천재지변, 전력/통신 장애, 외부 서비스 장애 등)으로 발생한 손해에 대해 책임을 지지 않습니다.
+- 회사의 총 책임은 법이 허용하는 최대 한도 내에서, 최근 3개월간 이용자가 회사에 실제로 지급한 금액(무료 서비스인 경우 0원)을 한도로 제한됩니다.
+        </div>
+      </article>
+
+      <!-- 12 -->
+      <article id="s12" class="section-card">
+        <div class="sec-title">12. 손해배상</div>
+        <div class="sec-body">
+이용자가 약관 또는 관련 법령을 위반하여 회사에 손해가 발생한 경우, 이용자는 회사가 입은 손해를 배상해야 합니다. 제3자의 클레임으로 회사에 비용이 발생하면 이용자는 합리적 범위의 비용(변호사 비용 포함)을 부담할 수 있습니다.
+        </div>
+      </article>
+
+      <!-- 13 -->
+      <article id="s13" class="section-card">
+        <div class="sec-title">13. 준거법 및 관할</div>
+        <div class="sec-body">
+본 약관은 대한민국 법령을 준거법으로 하며, 서비스 이용과 관련하여 회사와 이용자 간 분쟁이 발생한 경우, 민사소송법 등 관련 법령에 따른 관할법원을 전속 관할로 합니다. 가능하면 먼저 내부 이의제기 절차로 원만히 해결하는 것을 원칙으로 합니다.
+        </div>
+      </article>
+
+      <!-- 14 -->
+      <article id="s14" class="section-card">
+        <div class="sec-title">14. 약관 개정</div>
+        <div class="sec-body">
+- 회사는 약관을 개정하는 경우, 개정 약관과 사유·시행일을 명시하여 공지사항 페이지에 사전 공지합니다.
+- 이용자는 개정에 동의하지 않을 권리가 있으며, 이 경우 서비스 이용을 중단하고 계정을 삭제할 수 있습니다.
+        </div>
+      </article>
+
+      <!-- 15 -->
+      <article id="s15" class="section-card">
+        <div class="sec-title">15. 문의</div>
+        <div class="sec-body">
+- 이메일: yoon080708@gmail.com
+- 전화번호: 010-4669-4985
+- 인스타그램: @nimxess  
+- 운영주체 소개: Luminary Labs — <a href="https://luminarylabs.netlify.app" target="_blank" rel="noopener">소개 페이지</a>
+        </div>
+        <div class="sec-meta">
+          시행일: 2025-10-19 · 버전 1.0
+        </div>
+      </article>
+
+      <div class="section-card muted" style="font-size:12px">
+        ※ 본 약관은 이해를 돕기 위한 요약적 표현을 포함하며, 법률 자문이 아닙니다.  
+        보다 자세한 개인정보 처리에 관한 내용은 <a href="privacy.html" data-nav>개인정보 처리방침</a>을 참고하세요.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (function(){
+      // notices.html에서 사용한 부드러운 전환 유지
+      document.querySelectorAll('a[data-nav]').forEach((link)=>{
+        const href = link.getAttribute('href') || '';
+        link.addEventListener('click',(ev)=>{
+          if(!href || href.startsWith('#') || href.startsWith('http')) return;
+          ev.preventDefault();
+          if(document.startViewTransition){
+            document.startViewTransition(()=> location.href = href);
+          }else{
+            document.body.style.opacity = '0';
+            setTimeout(()=> location.href = href, 140);
+          }
+        });
+      });
+
+      // 목차 내부 앵커 스크롤 부드럽게
+      document.querySelectorAll('.toc a').forEach(a=>{
+        a.addEventListener('click', (e)=>{
+          const id = a.getAttribute('href')||'';
+          if(id.startsWith('#')){
+            e.preventDefault();
+            const el = document.querySelector(id);
+            if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

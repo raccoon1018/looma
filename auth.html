@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="ko" data-theme="auto">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Looma — Auth</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Peta:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet"/>
+
+  <meta name="theme-color" content="#0A0A0A"/>
+  <script>
+    (function(){
+      try{
+        var root = document.documentElement;
+        var theme = localStorage.getItem('looma:theme');
+        if(theme !== 'light' && theme !== 'dark'){ theme = 'auto'; }
+        if(theme === 'auto'){ root.removeAttribute('data-theme'); }
+        else{ root.setAttribute('data-theme', theme); }
+        root.dataset.themePreference = theme;
+      }catch(err){
+        /* ignore */
+      }
+    })();
+  </script>
+  <script src="theme.js"></script>
+
+  <style>
+    :root{
+      --bg:#0A0A0A; --surface:#111213; --elev:#151618; --line:#1E2023;
+      --text:#EDEFF2; --muted:#9AA3AE; --brand:#0EA5E9;
+      --radius:14px; --shadow:0 10px 20px rgba(0,0,0,.24); --speed:.18s;
+      --barh:48px;
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+        --text:#0B1220; --muted:#596174; --brand:#0077FF; --shadow:0 10px 20px rgba(10,16,30,.06);
+      }
+    }
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      padding-bottom: var(--barh); /* 하단 바와 겹치지 않도록 */
+    }
+    a{ color:inherit; text-decoration:none }
+    button{ font:inherit; background:none; border:0; color:inherit; cursor:pointer }
+
+    /* ===== Wallpaper (Aurora) ===== */
+    :root{
+      --aurora1: #0ea5e9; --aurora2: #a78bfa; --aurora3: #22c55e;
+      --veil-dark: rgba(0,0,0,.18); --veil-light: rgba(255,255,255,.22);
+    }
+    @media (prefers-color-scheme: light){
+      :root{ --aurora1:#60a5fa; --aurora2:#f472b6; --aurora3:#22c55e; --veil-dark: rgba(0,0,0,.08); --veil-light: rgba(255,255,255,.24); }
+    }
+    .wallpaper{
+      position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(120% 120% at 50% 0%, var(--veil-dark), transparent 60%),
+        linear-gradient(180deg, transparent 0%, transparent 40%, var(--veil-dark) 100%);
+      z-index:0;
+    }
+    .wallpaper::before,
+    .wallpaper::after{
+      content:""; position:absolute; border-radius:50%;
+      filter: blur(60px) saturate(120%); opacity:.7; will-change: transform;
+    }
+    .wallpaper::before{
+      width:82vmax; height:82vmax; left:-18vmax; top:-14vmax;
+      background: radial-gradient(closest-side, rgba(14,165,233,.55), rgba(14,165,233,0) 70%);
+      animation: floatA 22s ease-in-out infinite alternate;
+    }
+    .wallpaper::after{
+      width:88vmax; height:88vmax; right:-20vmax; bottom:-18vmax;
+      background:
+        radial-gradient(closest-side, rgba(167,139,250,.50), rgba(167,139,250,0) 68%),
+        radial-gradient(closest-side, rgba(34,197,94,.25), rgba(34,197,94,0) 70%);
+      animation: floatB 26s ease-in-out infinite alternate;
+    }
+    @keyframes floatA{ 0%{ transform:translate(-6%,-2%) scale(1)} 100%{ transform:translate(8%,6%) scale(1.08)} }
+    @keyframes floatB{ 0%{ transform:translate(6%,3%) scale(1)} 100%{ transform:translate(-10%,-6%) scale(1.06)} }
+    @media (prefers-reduced-motion: reduce){ .wallpaper::before,.wallpaper::after{ animation:none } }
+
+    /* Topbar */
+    .topbar{
+      position:sticky; top:0; z-index:5;
+      display:flex; align-items:center; gap:12px;
+      height:56px; padding:0 14px; border-bottom:1px solid var(--line); background:var(--surface);
+    }
+    .brand{ font-family:"Lexend Peta"; font-weight:800; letter-spacing:.4px }
+    .brand a{ display:inline-flex; align-items:center; gap:8px; padding:6px 8px; border-radius:10px }
+    .brand a:hover{ background:var(--elev) }
+
+    /* Layout */
+    .wrap{ min-height:calc(100dvh - 56px - var(--barh)); display:grid; place-items:center; padding:24px 14px; position:relative; z-index:1 }
+    .card{
+      width:min(92vw, 560px);
+      border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card-head{ padding:14px; border-bottom:1px solid var(--line); display:flex; gap:6px }
+    .seg{ display:flex; gap:6px }
+    .seg button{
+      padding:8px 12px; border-radius:999px; border:1px solid var(--line); background:var(--elev); font-weight:700
+    }
+    .seg button.active{ background:var(--brand); border-color:transparent; color:#fff }
+
+    .card-body{ padding:16px }
+    .row{ display:grid; gap:6px; margin:10px 0 }
+    label{ font-weight:600 }
+    input, .file{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--text);
+      outline:none;
+    }
+    .field{ position:relative }
+    .toggle-eye{
+      position:absolute; right:8px; top:50%; transform:translateY(-50%); border:1px solid var(--line);
+      width:34px; height:32px; border-radius:8px; background:var(--elev); display:grid; place-items:center;
+    }
+
+    .hint{ color:var(--muted); font-size:12px }
+    .rules{ display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; margin-top:8px }
+    .rule{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted) }
+    .rule i{ font-size:16px }
+    .rule.ok{ color:#22c55e } .rule.bad{ color:var(--muted) }
+
+    .actions{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap }
+    .btn{
+      flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--elev); font-weight:700; text-align:center
+    }
+    .btn.primary{ background:var(--brand); border-color:transparent; color:#fff }
+    .btn.ghost{ background:transparent }
+
+    .or{ display:flex; align-items:center; gap:12px; margin:12px 0; color:var(--muted) }
+    .or::before,.or::after{ content:""; height:1px; flex:1; background:var(--line) }
+
+    .msg{ margin-top:10px; padding:10px 12px; border:1px solid var(--line); background:var(--elev); border-radius:10px }
+
+    /* View Transitions */
+    @keyframes popIn{ from{ opacity:0; transform:translateY(6px) } to{ opacity:1; transform:none } }
+    .view{ display:none; animation: popIn .18s ease both }
+    .view.active{ display:block }
+
+    /* Onboarding */
+    .avatar-up{
+      display:flex; align-items:center; gap:12px; margin-top:8px
+    }
+    .avatar{
+      width:60px; height:60px; border-radius:50%; background:var(--elev); border:1px solid var(--line);
+      background-position:center; background-size:cover; flex:0 0 auto;
+    }
+
+    /* Modal (custom) */
+    .modal{ position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.4); z-index:50; padding:16px }
+    .modal.open{ display:grid }
+    .panel{
+      width:min(94vw, 620px); max-height:80vh; overflow:auto;
+      background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow);
+    }
+    .panel .head{ padding:14px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between }
+    .panel .body{ padding:14px 16px; display:grid; gap:12px }
+    .panel .foot{ padding:12px 16px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:8px }
+    .title{ font-size:18px; font-weight:800 }
+    .li{ display:grid; gap:4px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:var(--elev) }
+    .li .t{ display:flex; align-items:center; gap:8px; font-weight:700 }
+    .small{ color:var(--muted); font-size:12px }
+
+    /* Bottom Bar */
+    .bbar{
+      position:fixed; bottom:0; left:0; right:0; height:var(--barh);
+      display:flex; align-items:center; justify-content:center; gap:12px;
+      background:var(--surface); border-top:1px solid var(--line); color:var(--muted); z-index:5;
+      padding:0 12px;
+    }
+    .bbar .sep{ width:1px; height:16px; background:var(--line) }
+    .bbar a{ color:inherit }
+
+    @media (max-width:480px){ .rules{ grid-template-columns:1fr } }
+  </style>
+</head>
+<body>
+  <!-- Aurora wallpaper -->
+  <div class="wallpaper" aria-hidden="true"></div>
+
+  <!-- Top -->
+  <header class="topbar">
+    <div class="brand"><a href="home.html" data-nav><span>LOOMA</span></a></div>
+  </header>
+
+  <!-- Main -->
+  <main class="wrap">
+    <section class="card" role="region" aria-label="인증">
+      <div class="card-head">
+        <div class="seg" role="tablist" aria-label="인증 유형">
+          <button id="tabLogin" class="active" role="tab" aria-controls="viewLogin" aria-selected="true">로그인</button>
+          <button id="tabSignup" role="tab" aria-controls="viewSignup" aria-selected="false">계정 생성</button>
+          <!-- 프로필 설정 탭은 존재하지 않음(요청사항) -->
+        </div>
+      </div>
+
+      <div class="card-body">
+        <!-- 로그인 -->
+        <div id="viewLogin" class="view active" role="tabpanel" aria-labelledby="tabLogin">
+          <form id="loginForm" class="form">
+            <div class="row">
+              <label for="loginId">이메일 또는 아이디(@...)</label>
+              <input id="loginId" type="text" autocomplete="username" placeholder="예: you@example.com 또는 @looma_owner" required>
+            </div>
+            <div class="row field">
+              <label for="loginPw">비밀번호</label>
+              <input id="loginPw" type="password" autocomplete="current-password" placeholder="비밀번호" required>
+              <button type="button" class="toggle-eye" data-toggle="loginPw" aria-label="비밀번호 표시"><i class="ri-eye-line"></i></button>
+            </div>
+            <div class="actions">
+              <button class="btn primary" type="submit">로그인</button>
+              <button class="btn ghost" id="btnResetOpen" type="button">비밀번호 찾기</button>
+            </div>
+            <div id="loginMsg" class="msg" style="display:none"></div>
+          </form>
+        </div>
+
+        <!-- 계정 생성 -->
+        <div id="viewSignup" class="view" role="tabpanel" aria-labelledby="tabSignup">
+          <form id="signupForm" class="form" novalidate>
+            <div class="row">
+              <label for="signEmail">이메일</label>
+              <input id="signEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+              <div class="hint">이메일 인증 후 프로필(아이디·이름)을 설정합니다.</div>
+            </div>
+            <div class="row">
+              <label for="signPhone">전화번호 (010-XXXX-XXXX)</label>
+              <input id="signPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="010-1234-5678" required>
+              <div class="hint" id="phoneHint">반드시 010 번호만 사용할 수 있어요.</div>
+            </div>
+            <div class="row field">
+              <label for="signPw">비밀번호</label>
+              <input id="signPw" type="password" autocomplete="new-password" placeholder="8자 이상, 대/소문자·숫자·특수문자 포함" required>
+              <button type="button" class="toggle-eye" data-toggle="signPw" aria-label="비밀번호 표시"><i class="ri-eye-line"></i></button>
+              <div class="rules" id="pwRules">
+                <div class="rule" data-k="len"><i class="ri-checkbox-blank-circle-line"></i> 8자 이상</div>
+                <div class="rule" data-k="mix"><i class="ri-checkbox-blank-circle-line"></i> 대·소문자 포함</div>
+                <div class="rule" data-k="num"><i class="ri-checkbox-blank-circle-line"></i> 숫자 포함</div>
+                <div class="rule" data-k="sym"><i class="ri-checkbox-blank-circle-line"></i> 특수문자 포함</div>
+              </div>
+            </div>
+            <div class="row field">
+              <label for="signPw2">비밀번호 확인</label>
+              <input id="signPw2" type="password" autocomplete="new-password" placeholder="비밀번호 확인" required>
+              <button type="button" class="toggle-eye" data-toggle="signPw2" aria-label="비밀번호 표시"><i class="ri-eye-line"></i></button>
+              <div class="hint" id="pwMatchHint"></div>
+            </div>
+            <div class="actions">
+              <button class="btn primary" type="submit">계정 생성</button>
+            </div>
+            <div id="signupMsg" class="msg" style="display:none"></div>
+          </form>
+        </div>
+
+        <!-- Onboarding(탭 없음): 아이디/이름/프로필 -->
+        <div id="viewOnboard" class="view" role="region" aria-label="프로필 설정">
+          <form id="onboardForm" class="form" novalidate>
+            <div class="row">
+              <label for="obHandle">아이디(@...)</label>
+              <input id="obHandle" type="text" placeholder="@your_id" autocomplete="off" required>
+              <div class="hint">영문/숫자/밑줄, 최소 3자. 공개 핸들로 사용됩니다.</div>
+              <div class="hint" id="handleHint"></div>
+            </div>
+            <div class="row">
+              <label for="obName">이름</label>
+              <input id="obName" type="text" placeholder="표시 이름" autocomplete="name" required>
+            </div>
+            <div class="row">
+              <label>프로필 사진 (선택)</label>
+              <div class="avatar-up">
+                <div id="obAvatar" class="avatar" aria-label="미리보기"></div>
+                <input id="obFile" class="file" type="file" accept="image/*">
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn primary" type="submit">완료</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom bar -->
+  <footer class="bbar">
+    <span>© 2025 LOOMA</span>
+    <span class="sep"></span>
+    <a href="terms.html" data-nav>이용 약관</a>
+    <span>·</span>
+    <a href="https://luminarylabs.netlify.app" target="_blank" rel="noopener">Luminary Labs</a>
+  </footer>
+
+  <!-- Modal: 비밀번호 찾기 -->
+  <div class="modal" id="modal-reset" aria-hidden="true" role="dialog" aria-label="비밀번호 재설정">
+    <div class="panel">
+      <div class="head">
+        <div class="title">비밀번호 재설정</div>
+      </div>
+      <div class="body">
+        <div class="row">
+          <label for="resetEmail">가입 이메일</label>
+          <input id="resetEmail" type="email" placeholder="you@example.com">
+          <div class="hint">이메일로 재설정 링크가 전송됩니다. (추후 구현)</div>
+        </div>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-reset">취소</button>
+        <button class="btn primary" id="btnResetSend" type="button" disabled>보내기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 계정 생성 취소 확인 -->
+  <div class="modal" id="modal-cancel-signup" aria-hidden="true" role="dialog" aria-label="계정 생성 취소">
+    <div class="panel">
+      <div class="head">
+        <div class="title">계정 생성을 취소할까요?</div>
+      </div>
+      <div class="body">
+        <div class="hint">입력한 정보가 사라질 수 있습니다.</div>
+      </div>
+      <div class="foot">
+        <button class="btn" id="cancelStay">계속 작성</button>
+        <button class="btn primary" id="cancelToLogin">네, 로그인으로</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 보안 시스템 안내 -->
+  <div class="modal" id="modal-security" aria-hidden="true" role="dialog" aria-label="보안 시스템 안내">
+    <div class="panel">
+      <div class="head">
+        <div class="title">Looma 서비스 운영을 위한 보안 시스템 운영</div>
+      </div>
+      <div class="body">
+        <div class="hint">Looma는 안전하고 모두에게 지속가능한 서비스를 제공하기 위해 다음과 같은 보안 시스템을 사용하고 있습니다.</div>
+
+        <div class="li">
+          <div class="t"><i class="ri-checkbox-circle-line"></i> 전화번호 무작위 무결성 확인</div>
+          <div class="small">무결성 통과 실패시 계정 정지 조치가 취해질 수 있습니다.</div>
+        </div>
+
+        <div class="li">
+          <div class="t"><i class="ri-checkbox-circle-line"></i> IP 주소 상시 추적</div>
+          <div class="small">익명에 기대어 명예를 훼손시키는 게시물 업로드 방지를 위해 원천 IP를 상시 추적합니다.</div>
+        </div>
+
+        <div class="li">
+          <div class="t"><i class="ri-checkbox-circle-line"></i> 사용자 위치 저장</div>
+          <div class="small">무작위로 게시물이나 댓글을 게시하는 경우 위치를 서버에 전송함으로서 원천 사용자를 파악하는데 도움을 줍니다.</div>
+        </div>
+      </div>
+      <div class="foot">
+        <button class="btn primary" data-close="#modal-security">확인했어요</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 추천인 코드 확인 -->
+  <div class="modal" id="modal-referral" aria-hidden="true" role="dialog" aria-label="추천인 코드 확인">
+    <div class="panel">
+      <div class="head">
+        <div class="title">추천인 코드 확인</div>
+      </div>
+      <div class="body" style="display:grid; gap:12px;">
+        <p>계정 생성을 완료하려면 추천인 코드를 입력해 주세요.<br/>자세한 내용은 Instagram <strong>@nimxess</strong>로 문의해 주세요.</p>
+        <input id="referralCodeInput" placeholder="예: FRIEND-AB12" autocomplete="one-time-code"/>
+        <div id="referralError" class="small" style="color:#f97316; display:none"></div>
+      </div>
+      <div class="foot">
+        <button class="btn" id="btnReferralCancel" data-close="#modal-referral">취소</button>
+        <button class="btn primary" id="btnReferralSubmit" type="button">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ===== Helpers ===== */
+    const $ = (s, r=document)=>r.querySelector(s);
+    const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+    function escapeHtml(str){
+      return String(str ?? '').replace(/[&<>"']/g, (ch)=>{
+        switch(ch){
+          case '&': return '&amp;';
+          case '<': return '&lt;';
+          case '>': return '&gt;';
+          case '"': return '&quot;';
+          case "'": return '&#39;';
+          default: return ch;
+        }
+      });
+    }
+    let requiresReferralCode = false;
+    const referralModal = $('#modal-referral');
+    const referralInput = $('#referralCodeInput');
+    const referralError = $('#referralError');
+    const btnReferralSubmit = $('#btnReferralSubmit');
+    const btnReferralCancel = $('#btnReferralCancel');
+    function openModal(sel){ const m=$(sel); if(!m) return; m.classList.add('open'); m.setAttribute('aria-hidden','false'); }
+    function closeModal(el){ const m=typeof el==='string'?$(el):el.closest('.modal'); if(!m) return; m.classList.remove('open'); m.setAttribute('aria-hidden','true'); }
+    document.addEventListener('click',(e)=>{ const c=e.target.closest('[data-close]'); if(c){ e.preventDefault(); closeModal(c.getAttribute('data-close')); } });
+
+    (async () => {
+      try{
+        const res = await fetch('/api/config', { credentials:'include' });
+        if(res.ok){
+          const cfg = await res.json();
+          requiresReferralCode = !!cfg?.requiresReferralCode;
+        }
+      }catch(err){ /* ignore */ }
+    })();
+
+    let referralResolver = null;
+    function resetReferralState(){
+      if(referralError){
+        referralError.style.display = 'none';
+        referralError.textContent = '';
+      }
+      if(btnReferralSubmit) btnReferralSubmit.disabled = false;
+    }
+    function requestReferralCode(){
+      if(!referralModal) return Promise.resolve(null);
+      resetReferralState();
+      if(referralInput) referralInput.value = '';
+      openModal('#modal-referral');
+      setTimeout(()=> referralInput?.focus(), 60);
+      return new Promise((resolve)=>{
+        referralResolver = resolve;
+      });
+    }
+    async function submitReferralCode(){
+      if(!referralModal) return;
+      const codeRaw = (referralInput?.value || '').trim().toUpperCase();
+      if(!codeRaw){
+        if(referralError){
+          referralError.textContent = '추천인 코드를 입력해 주세요.';
+          referralError.style.display = 'block';
+        }
+        referralInput?.focus();
+        return;
+      }
+      if(referralError) referralError.style.display = 'none';
+      if(btnReferralSubmit) btnReferralSubmit.disabled = true;
+      try{
+        const res = await fetch('/api/referrals/verify', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          credentials:'include',
+          body: JSON.stringify({ code: codeRaw })
+        });
+        const data = await res.json();
+        if(!res.ok || !data?.valid){
+          const reason = data?.reason || 'invalid';
+          let msg = '유효하지 않은 코드입니다.';
+          if(reason === 'expired') msg = '만료된 코드입니다.';
+          else if(reason === 'revoked') msg = '철회된 코드입니다.';
+          else if(reason === 'limit-reached') msg = '사용 가능한 횟수를 모두 사용한 코드입니다.';
+          if(referralError){
+            referralError.textContent = msg;
+            referralError.style.display = 'block';
+          }
+          referralInput?.focus();
+          return;
+        }
+        closeModal('#modal-referral');
+        const resolve = referralResolver;
+        referralResolver = null;
+        if(resolve) resolve(codeRaw);
+      }catch(err){
+        if(referralError){
+          referralError.textContent = '코드를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+          referralError.style.display = 'block';
+        }
+      }finally{
+        if(btnReferralSubmit) btnReferralSubmit.disabled = false;
+      }
+    }
+    if(btnReferralSubmit){
+      btnReferralSubmit.addEventListener('click', submitReferralCode);
+    }
+    if(referralInput){
+      referralInput.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          submitReferralCode();
+        }
+      });
+    }
+    if(btnReferralCancel){
+      btnReferralCancel.addEventListener('click', ()=>{
+        resetReferralState();
+        if(referralResolver){
+          const resolve = referralResolver;
+          referralResolver = null;
+          resolve(null);
+        }
+      });
+    }
+
+    /* ===== 탭 전환 ===== */
+    const tabLogin = $('#tabLogin'), tabSignup = $('#tabSignup');
+    const viewLogin = $('#viewLogin'), viewSignup = $('#viewSignup'), viewOnboard = $('#viewOnboard');
+
+    function setTab(which){
+      const onLogin = which==='login', onSignup = which==='signup';
+      tabLogin.classList.toggle('active', onLogin);
+      tabSignup.classList.toggle('active', onSignup);
+      tabLogin.setAttribute('aria-selected', onLogin);
+      tabSignup.setAttribute('aria-selected', onSignup);
+      viewLogin.classList.toggle('active', onLogin);
+      viewSignup.classList.toggle('active', onSignup);
+      viewOnboard.classList.remove('active'); // 온보딩은 탭이 아님
+      history.replaceState(null,'', onLogin ? '#login' : '#signup');
+    }
+    tabLogin.addEventListener('click', (e)=>{
+      if(isSignupDirty()){
+        e.preventDefault();
+        openModal('#modal-cancel-signup');
+      }else{
+        setTab('login');
+      }
+    });
+    tabSignup.addEventListener('click', ()=> setTab('signup'));
+    if (location.hash === '#signup') setTab('signup');
+
+    // 계정 생성 취소 모달 로직
+    $('#cancelStay').addEventListener('click', ()=> closeModal('#modal-cancel-signup'));
+    $('#cancelToLogin').addEventListener('click', ()=>{
+      closeModal('#modal-cancel-signup');
+      resetSignupForm();
+      setTab('login');
+    });
+
+    /* ===== 비밀번호 표시 토글 ===== */
+    $$('.toggle-eye').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.getAttribute('data-toggle');
+        const input = document.getElementById(id);
+        if(!input) return;
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.innerHTML = show ? '<i class="ri-eye-off-line"></i>' : '<i class="ri-eye-line"></i>';
+      });
+    });
+
+    /* ===== 비밀번호 규칙 체크 ===== */
+    const signPw = $('#signPw'), signPw2 = $('#signPw2');
+    const pwRules = $('#pwRules'), pwMatchHint = $('#pwMatchHint');
+    function ruleUpdate(){
+      const v = signPw.value || '';
+      const rules = { len: v.length >= 8, mix:(/[a-z]/.test(v) && /[A-Z]/.test(v)), num:/\d/.test(v), sym:(/[^A-Za-z0-9]/.test(v)) };
+      pwRules.querySelectorAll('.rule').forEach(r=>{
+        const k=r.getAttribute('data-k'); const ok=!!rules[k];
+        r.classList.toggle('ok', ok); r.classList.toggle('bad', !ok);
+        r.querySelector('i').className = ok ? 'ri-checkbox-circle-line' : 'ri-checkbox-blank-circle-line';
+      });
+      const match = signPw2.value && signPw2.value === v;
+      pwMatchHint.textContent = signPw2.value ? (match ? '비밀번호가 일치합니다' : '비밀번호가 일치하지 않습니다') : '';
+      pwMatchHint.style.color = match ? '#22c55e' : 'var(--muted)';
+    }
+    signPw.addEventListener('input', ruleUpdate);
+    signPw2.addEventListener('input', ruleUpdate);
+
+    /* ===== 전화번호(010만, 자동 포맷) ===== */
+    const signPhone = $('#signPhone'), phoneHint = $('#phoneHint');
+    function formatPhone010(v){
+      let digits = v.replace(/\D/g,'');
+      if(!digits) return { formatted:'', ok:false };
+      if(!digits.startsWith('010')){
+        return { formatted: digits.slice(0,11), ok:false };
+      }
+      digits = digits.slice(0,11);
+      if(digits.length <= 3){
+        return { formatted: digits, ok:false };
+      }
+      if(digits.length <= 7){
+        return { formatted: `${digits.slice(0,3)}-${digits.slice(3)}`, ok:false };
+      }
+      const formatted = `${digits.slice(0,3)}-${digits.slice(3,7)}-${digits.slice(7)}`;
+      return { formatted, ok: digits.length === 11 };
+    }
+    signPhone.addEventListener('input', ()=>{
+      const cur = signPhone.value;
+      const f = formatPhone010(cur);
+      signPhone.value = f.formatted;
+      phoneHint.textContent = f.ok ? '사용 가능한 번호 형식입니다.' : '반드시 010-XXXX-XXXX 형식이어야 해요.';
+      phoneHint.style.color = f.ok ? '#22c55e' : 'var(--muted)';
+    });
+
+    /* ===== 로그인 ===== */
+    const loginForm = $('#loginForm'), loginId = $('#loginId'), loginPw = $('#loginPw'), loginMsg = $('#loginMsg');
+    loginForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const id=(loginId.value||'').trim();
+      const pw=(loginPw.value||'').trim();
+      if(!id || !pw){
+        loginMsg.style.display='block';
+        loginMsg.textContent='아이디/이메일과 비밀번호를 입력하세요.';
+        return;
+      }
+      try{
+        const res = await fetch('/api/login',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          credentials:'include',
+          body: JSON.stringify({ identifier:id, password:pw })
+        });
+        let data = null;
+        let rawText = '';
+        try{
+          data = await res.json();
+        }catch(parseErr){
+          rawText = await res.text().catch(()=> '');
+        }
+        if(!res.ok){
+          const message = data?.error || data?.message || rawText || 'login-failed';
+          const error = new Error(message);
+          if(data) error.details = data;
+          throw error;
+        }
+        if(!data?.ok){
+          const error = new Error(data?.error || '로그인 실패');
+          error.details = data;
+          throw error;
+        }
+        loginMsg.style.display='block'; loginMsg.textContent='로그인 성공! 홈으로 이동합니다…';
+        setTimeout(()=> location.href='home.html', 400);
+      }catch(err){
+        const details = err?.details;
+        const code = details?.error || String(err?.message || err || '').trim();
+        if(details && (code==='account-deleted' || code==='account-deactivated' || code==='account-suspended')){
+          renderAccountStatus({
+            ...details,
+            status: details.status || (code==='account-deleted' ? 'deleted' : code==='account-suspended' ? 'suspended' : 'deactivated'),
+          });
+          return;
+        }
+        let friendly;
+        switch(code){
+          case 'account-deactivated':
+            friendly = '비활성화된 계정입니다. 지원팀에 복구를 요청해 주세요.';
+            break;
+          case 'account-deleted':
+            friendly = '이미 삭제된 계정입니다.';
+            break;
+          case 'account-suspended':
+            friendly = '정지된 계정입니다. 자세한 내용은 관리자에게 문의해 주세요.';
+            break;
+          case 'account-banned':
+            friendly = '영구 정지된 계정입니다. 지원팀에 문의해 주세요.';
+            break;
+          case 'account-disabled':
+            friendly = '계정 관리 구성이 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.';
+            break;
+          case 'invalid':
+          case 'invalid-credentials':
+            friendly = '아이디 또는 비밀번호가 올바르지 않습니다.';
+            break;
+          default:
+            friendly = code && !/\s/.test(code) ? code : (code || '로그인을 완료하지 못했습니다.');
+            break;
+        }
+        loginMsg.style.display='block';
+        loginMsg.textContent = '로그인 실패: ' + friendly;
+      }
+    });
+
+    function renderAccountStatus(details){
+      if(!loginMsg) return;
+      const status = details.status || details.accountStatus || null;
+      const statusLabel = status === 'suspended' ? '일시 정지' : status === 'deleted' ? '영구 정지' : status === 'deactivated' ? '비활성화' : '제한됨';
+      let statusLine = `상태: ${statusLabel}`;
+      if(status === 'suspended' && details.suspendedUntil){
+        statusLine += ` (${new Date(details.suspendedUntil).toLocaleString()}까지)`;
+      }
+      loginMsg.classList.remove('hidden');
+      loginMsg.style.display='block';
+      loginMsg.innerHTML = `
+        <div style="font-weight:700; font-size:15px; margin-bottom:8px;">계정 접근이 제한되었습니다.</div>
+        <div style="margin-bottom:8px;">${escapeHtml(details.reason || details.message || '관리자의 조치로 로그인이 제한되었습니다.')}</div>
+        <div style="padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-bottom:12px;">
+          <div style="font-weight:600; margin-bottom:6px;">관리자 사유</div>
+          <div style="white-space:pre-wrap; line-height:1.5;">${escapeHtml(details.detail || details.reason || '사유가 제공되지 않았습니다.')}</div>
+          ${details.recordedAt ? `<div style="margin-top:6px; color:var(--muted); font-size:12px;">조치 일시: ${new Date(details.recordedAt).toLocaleString()}</div>` : ''}
+        </div>
+        <div style="margin-bottom:8px;">Looma는 모든 사용자들이 안전하고 공정한 사용을 하도록 노력하고 있습니다. 자세한 내용은 Looma의 도움말을 참고해 주세요.</div>
+        <div style="font-size:13px; color:var(--muted);">${escapeHtml(statusLine)}</div>
+        ${details.action ? `<div style="font-size:12px; color:var(--muted); margin-top:4px;">조치 유형: ${escapeHtml(details.action)}</div>` : ''}
+      `;
+    }
+
+    /* ===== 비밀번호 찾기(모달) ===== */
+    const resetEmail = $('#resetEmail'), btnResetOpen = $('#btnResetOpen'), btnResetSend = $('#btnResetSend');
+    btnResetOpen.addEventListener('click', ()=> openModal('#modal-reset'));
+    resetEmail.addEventListener('input', ()=>{
+      const ok = /\S+@\S+\.\S+/.test(resetEmail.value||'');
+      btnResetSend.disabled = !ok;
+    });
+    btnResetSend.addEventListener('click', ()=>{
+      // TODO: Supabase reset API 연동
+      btnResetSend.disabled = true;
+      setTimeout(()=>{ closeModal('#modal-reset'); btnResetSend.disabled=false; }, 300);
+    });
+
+    /* ===== 계정 생성 → 온보딩 이동 ===== */
+    const signupForm = $('#signupForm'), signEmail=$('#signEmail'), signupMsg=$('#signupMsg');
+    let pendingSignup = null;
+    function isSignupDirty(){
+      return pendingSignup != null || (signEmail.value||'').trim() || (signPhone.value||'').trim() || (signPw.value||'').trim() || (signPw2.value||'').trim();
+    }
+    function resetSignupForm(){
+      signupForm.reset(); ruleUpdate(); phoneHint.textContent='반드시 010 번호만 사용할 수 있어요.'; phoneHint.style.color='var(--muted)'; pendingSignup = null; signupMsg.style.display='none'; signupMsg.textContent='';
+    }
+    signupForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const email=(signEmail.value||'').trim(), p1=signPw.value||'', p2=signPw2.value||'';
+      const ph = signPhone.value||'';
+      const phoneOk = /^010-\d{4}-\d{4}$/.test(ph);
+      const ok = p1.length>=8 && /[a-z]/.test(p1) && /[A-Z]/.test(p1) && /\d/.test(p1) && /[^A-Za-z0-9]/.test(p1) && p1===p2 && /\S+@\S+\.\S+/.test(email) && phoneOk;
+      if(!ok){
+        signupMsg.style.display='block';
+        signupMsg.textContent='입력값을 확인해 주세요. 비밀번호 규칙/이메일/전화번호(010-XXXX-XXXX)를 다시 확인하세요.';
+        return;
+      }
+      const nextPending = { email, phone: ph, password: p1 };
+      if(requiresReferralCode){
+        try{
+          const code = await requestReferralCode();
+          if(!code){
+            signupMsg.style.display='block';
+            signupMsg.textContent='추천인 코드 입력이 취소되었습니다.';
+            return;
+          }
+          nextPending.referralCode = code;
+        }catch(err){
+          signupMsg.style.display='block';
+          signupMsg.textContent='추천인 코드를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+          return;
+        }
+      }
+      pendingSignup = nextPending;
+      signupMsg.style.display='block';
+      signupMsg.textContent='이제 아이디와 프로필을 설정해 주세요.';
+      viewSignup.classList.remove('active');
+      viewOnboard.classList.add('active');
+      history.replaceState(null,'','#onboard');
+      signupForm.reset();
+      ruleUpdate();
+      phoneHint.textContent='반드시 010 번호만 사용할 수 있어요.';
+      phoneHint.style.color='var(--muted)';
+      window.scrollTo({ top:0, behavior:'smooth' });
+    });
+
+    /* ===== 온보딩(아이디/이름/프로필) & 완료 → 보안 모달 ===== */
+    const obForm = $('#onboardForm'), obHandle=$('#obHandle'), obName=$('#obName'), obAvatar=$('#obAvatar'), obFile=$('#obFile');
+    const handleHint = $('#handleHint');
+    let handleCheckTimer = null;
+    let handleAvailable = false;
+    let lastHandleQuery = '';
+    obFile.addEventListener('change',(e)=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      const url = URL.createObjectURL(f); obAvatar.style.backgroundImage = `url(${url})`;
+    });
+    function validHandle(v){ return /^@[A-Za-z0-9_]{3,}$/.test(v||''); }
+    async function checkHandleAvailability(val){
+      lastHandleQuery = val;
+      try{
+        const res = await fetch(`/api/handles/check?handle=${encodeURIComponent(val)}`, { credentials:'include' });
+        if(!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        if(lastHandleQuery !== val) return;
+        handleAvailable = !!data.available;
+        handleHint.textContent = handleAvailable ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.';
+        handleHint.style.color = handleAvailable ? '#22c55e' : '#f97316';
+      }catch(err){
+        handleAvailable = false;
+        handleHint.textContent = '중복 확인에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+        handleHint.style.color = '#f97316';
+      }
+    }
+    obHandle.addEventListener('input', ()=>{
+      const val = obHandle.value.trim();
+      handleAvailable = false;
+      if(handleCheckTimer) clearTimeout(handleCheckTimer);
+      if(!val){
+        handleHint.textContent = '';
+        handleHint.style.color = 'var(--muted)';
+        return;
+      }
+      if(!validHandle(val)){
+        handleHint.textContent = '아이디는 @로 시작하고 영문/숫자/밑줄 3자 이상이어야 합니다.';
+        handleHint.style.color = '#f97316';
+        return;
+      }
+      handleHint.textContent = '중복 확인 중...';
+      handleHint.style.color = 'var(--muted)';
+      handleCheckTimer = setTimeout(()=> checkHandleAvailability(val), 350);
+    });
+    function fileToBase64(file){
+      return new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onload = ()=> {
+          const result = reader.result || '';
+          const base64 = typeof result === 'string' ? result.split(',').pop() : '';
+          resolve(base64 || '');
+        };
+        reader.onerror = ()=> reject(reader.error || new Error('파일을 읽지 못했습니다'));
+        reader.readAsDataURL(file);
+      });
+    }
+    obForm.addEventListener('submit',async (e)=>{
+      e.preventDefault();
+      const h=obHandle.value.trim(), n=obName.value.trim();
+      if(!pendingSignup){
+        alertInline('먼저 이메일과 비밀번호를 입력해 주세요.');
+        viewOnboard.classList.remove('active'); viewSignup.classList.add('active');
+        history.replaceState(null,'','#signup');
+        return;
+      }
+      if(!validHandle(h)){
+        alertInline('아이디는 @로 시작하고 영문/숫자/밑줄 3자 이상이어야 합니다.');
+        return;
+      }
+      if(lastHandleQuery !== h || !handleAvailable){
+        await checkHandleAvailability(h);
+        if(!handleAvailable){
+          alertInline('이미 사용 중인 아이디입니다. 다른 아이디를 입력해 주세요.');
+          return;
+        }
+      }
+      if(!n){ alertInline('이름을 입력해 주세요.'); return; }
+      let avatarPayload = null;
+      const avatarFile = obFile.files?.[0];
+      if(avatarFile){
+        try{
+          const data = await fileToBase64(avatarFile);
+          if(data){
+            avatarPayload = {
+              filename: avatarFile.name,
+              contentType: avatarFile.type || 'application/octet-stream',
+              data
+            };
+          }
+        }catch(err){
+          alertInline('프로필 이미지를 준비하지 못했습니다. 다른 파일을 선택해 주세요.');
+          return;
+        }
+      }
+      try{
+        const res = await fetch('/api/signup', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          credentials:'include',
+          body: JSON.stringify({
+            email: pendingSignup.email,
+            phone: pendingSignup.phone,
+            password: pendingSignup.password,
+            handle: h,
+            name: n,
+            avatar: avatarPayload,
+            referralCode: pendingSignup.referralCode || null
+          })
+        });
+        let data = null;
+        try{
+          data = await res.json();
+        }catch(parseErr){ /* ignore */ }
+        if(!res.ok){
+          const message = data?.error || data?.message || 'signup-failed';
+          const error = new Error(message);
+          error.details = data;
+          throw error;
+        }
+        if(!data?.ok){
+          const error = new Error(data?.error || '가입 처리에 실패했습니다.');
+          error.details = data;
+          throw error;
+        }
+        pendingSignup = null;
+        resetSignupForm();
+        obForm.reset();
+        obAvatar.style.backgroundImage = '';
+        handleHint.textContent = '';
+        handleAvailable = false;
+        openModal('#modal-security');
+        setTimeout(()=> location.href='home.html', 800);
+      }catch(err){
+        if(err?.message === 'referral-required'){
+          alertInline('추천인 코드가 필요합니다. 새로 고침 후 다시 시도해 주세요.');
+          return;
+        }
+        alertInline('가입 실패: '+(err.message || err));
+      }
+    });
+
+    // 간단한 인라인 알림(토스트 대용)
+    function alertInline(msg){
+      let box = document.getElementById('inlineMsg');
+      if(!box){
+        box = document.createElement('div');
+        box.id='inlineMsg';
+        box.className='msg';
+        document.querySelector('#viewOnboard .form').prepend(box);
+      }
+      box.textContent = msg;
+    }
+
+    /* ===== 단축키 ===== */
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==='Escape'){
+        const anyOpen = !!document.querySelector('.modal.open');
+        if(!anyOpen){
+          history.length>1?history.back():location.href='home.html';
+        }
+      }
+    });
+  </script>
+</body>
+</html>

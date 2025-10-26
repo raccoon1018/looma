@@ -1,0 +1,1770 @@
+<!doctype html>
+<html lang="ko" data-theme="auto">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Looma — Settings</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Peta:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet"/>
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0A0A0A">
+  <script>
+    (function(){
+      try{
+        var root = document.documentElement;
+        var theme = localStorage.getItem('looma:theme');
+        if(theme !== 'light' && theme !== 'dark'){ theme = 'auto'; }
+        if(theme === 'auto'){ root.removeAttribute('data-theme'); }
+        else{ root.setAttribute('data-theme', theme); }
+        root.dataset.themePreference = theme;
+      }catch(err){
+        /* ignore */
+      }
+    })();
+  </script>
+  <script src="theme.js"></script>
+  <script src="notify-badge.js" defer></script>
+
+  <style>
+    :root{
+      --bg:#0A0A0A; --surface:#111213; --elev:#151618; --line:#1E2023;
+      --text:#EDEFF2; --muted:#9AA3AE; --brand:#0EA5E9;
+      --warn:#F59E0B;
+      --radius:12px; --shadow:0 6px 16px rgba(0,0,0,.16); --speed:.18s;
+      --dock-h:64px; --footer-h:44px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    :root[data-theme="dark"]{
+      --bg:#0A0A0A; --surface:#111213; --elev:#151618; --line:#1E2023;
+      --text:#EDEFF2; --muted:#9AA3AE; --brand:#0EA5E9;
+      --warn:#F59E0B;
+      --shadow:0 6px 16px rgba(0,0,0,.16);
+    }
+    :root[data-theme="light"]{
+      --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+      --text:#0B1220; --muted:#596174; --brand:#0077FF;
+      --warn:#B45309;
+      --shadow:0 10px 20px rgba(10,16,30,.06);
+    }
+    @media (prefers-color-scheme: light){
+      :root:not([data-theme="dark"]):not([data-theme="light"]){
+        --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+        --text:#0B1220; --muted:#596174; --brand:#0077FF;
+        --warn:#B45309;
+        --shadow:0 10px 20px rgba(10,16,30,.06);
+      }
+    }
+    *{ box-sizing:border-box }
+    html, body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    a{ color:inherit; text-decoration:none }
+    button{ font:inherit; background:none; border:0; color:inherit; cursor:pointer }
+    input, select{
+      color:inherit; background:var(--elev); border:1px solid var(--line);
+      border-radius:10px; padding:10px 12px;
+    }
+    .hidden{ display:none !important }
+    .visually-hidden{
+      position:absolute;
+      width:1px;
+      height:1px;
+      padding:0;
+      margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      white-space:nowrap;
+      border:0;
+    }
+
+    .notif-link{ position:relative; display:inline-flex; }
+    .notif-nav{ position:relative; }
+    .notif-badge{
+      position:absolute;
+      top:-4px;
+      right:-4px;
+      min-width:16px;
+      height:16px;
+      padding:0 4px;
+      border-radius:999px;
+      background:#ef4444;
+      color:#fff;
+      font-size:10px;
+      font-weight:700;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .notif-badge.hidden{ display:none !important; }
+
+    .app{ min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
+
+    /* Mobile Top (home 동일) */
+    .m-top{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-bottom:1px solid var(--line); background:var(--surface);
+      position:sticky; top:0; z-index:20;
+    }
+    .m-left{ display:flex; align-items:center; gap:10px }
+    .m-center{ position:absolute; left:50%; transform:translateX(-50%); pointer-events:none }
+    .m-right{ display:flex; align-items:center; gap:8px }
+    .brand{ font-family:"Lexend Peta"; font-weight:800; letter-spacing:.4px; color:var(--text) }
+    .avatar{
+      width:28px; height:28px; border-radius:50%; background:#D1D5DB;
+      flex:0 0 28px; display:flex; align-items:center; justify-content:center;
+      background-position:center; background-size:cover; background-repeat:no-repeat;
+      font-weight:700; font-size:12px; color:#fff; text-transform:uppercase;
+    }
+    .icon-btn{
+      width:32px; height:32px; border-radius:50%;
+      border:1px solid var(--line); background:var(--elev);
+      display:inline-flex; align-items:center; justify-content:center;
+      transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .icon-btn i{ font-size:16px; line-height:1; }
+    .icon-btn:hover{ background:var(--brand); border-color:transparent; color:#fff; transform:translateY(-1px) }
+    @media (min-width:1024px){ .m-top{ display:none } }
+
+    /* Main Grid (home 동일) */
+    .main{ display:grid; gap:16px; grid-template-columns:1fr; padding:16px }
+    @media (min-width:1024px){ .main{ grid-template-columns:260px 1fr 320px; padding-bottom:calc(var(--footer-h) + 8px) } }
+    .container{ max-width:unset; width:100%; margin:0 auto }
+
+    /* Sidebar (home 그대로) */
+    .sidebar{ display:none }
+    @media (min-width:1024px){
+      .sidebar{
+        display:flex; flex-direction:column; gap:14px;
+        border-right:1px solid var(--line); padding:20px 12px 20px 0;
+      }
+      .side-head{ padding:0 8px }
+      .side-brand{ font-family:"Lexend Peta"; font-weight:800; font-size:18px }
+      .me-card{
+        display:flex; align-items:center; gap:10px; padding:10px;
+        border:1px solid var(--line); border-radius:12px; background:var(--surface);
+        background-image: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.03));
+      }
+      .me-card .name{ font-weight:600 } .me-card .id{ color:var(--muted); font-size:12px }
+
+      .nav{ display:flex; flex-direction:column; gap:6px; margin-top:4px }
+      .nav a{
+        display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+        border:1px solid transparent; transition: background var(--speed), border-color var(--speed);
+      }
+      .nav a:hover{ background:var(--elev); border-color:var(--line) }
+      .nav a.active{ background:var(--elev); border-color:var(--line) }
+      .nav .icon{ font-size:18px } .nav .label{ font-weight:600 }
+    }
+
+    /* Right rail (비움) */
+    .rrail{ display:none }
+
+    /* Footer (home 그대로) */
+    .footer{
+      position:fixed; left:0; right:0; bottom:0; height:var(--footer-h);
+      border-top:1px solid var(--line); background:var(--surface); color:#9AA3AE; z-index:50;
+    }
+    .footer .row{
+      max-width:1920px; margin:0 auto; height:100%;
+      padding:0 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    @media (max-width:1023.98px){ .footer{ display:none } }
+
+    /* Mobile Dock (home 그대로) */
+    .dock{ display:none }
+    @media (max-width:1023.98px){
+      .dock{
+        display:block;
+        position:fixed; left:0; right:0; bottom:0;
+        z-index:60;
+        height:var(--dock-h);
+        padding-bottom:var(--safe-bottom);
+        border-top:1px solid var(--line);
+        background:rgba(10,11,14,.92);
+        color:var(--muted);
+        box-shadow:0 -10px 26px rgba(0,0,0,.35);
+        backdrop-filter:blur(18px) saturate(160%);
+        -webkit-backdrop-filter:blur(18px) saturate(160%);
+        transform:translateZ(0);
+        transition:transform var(--speed), background var(--speed), border-color var(--speed);
+      }
+      :root[data-theme="light"] .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+      .with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+      .dock .row{
+        height:var(--dock-h);
+        display:flex;
+        justify-content:space-around;
+        align-items:center;
+        padding:0 12px;
+        gap:4px;
+      }
+      .dock a{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:4px;
+        padding:8px 12px;
+        min-width:56px;
+        border-radius:14px;
+        color:inherit;
+        transition: background var(--speed), color var(--speed), transform var(--speed);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .dock a:active{ transform:scale(.97); }
+      .dock a.active,
+      .dock a:hover{
+        background:var(--elev);
+        transform:translateY(-1px);
+        color:var(--text);
+      }
+      .dock .label{ font-size:11px; color:inherit }
+    }
+    @media (max-width:1023.98px) and (prefers-color-scheme: light){
+      :root:not([data-theme="dark"]) .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+    }
+
+    /* ===== Settings (Accordion) ===== */
+    .settings-root.with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+
+    .section{
+      border:1px solid var(--line); border-radius:12px; background:var(--surface);
+      overflow:hidden; margin-bottom:12px;
+    }
+    .section .head{
+      display:flex; align-items:center; justify-content:flex-start; gap:10px;
+      padding:14px; font-weight:800; cursor:pointer; user-select:none;
+      border-bottom:1px solid var(--line);
+    }
+    .head .spacer{ flex:1 }
+    .head .dirty-flag{
+      font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid rgba(245,158,11,.45);
+      background:rgba(245,158,11,.12); color:var(--warn);
+    }
+    .head .chev{ transition: transform var(--speed); font-size:18px }
+    .section[data-open="true"] .head .chev{ transform: rotate(180deg) }
+
+    /* Collapsible body */
+    .section .body{
+      overflow:hidden; max-height:0; padding:0 14px;
+      transition:max-height .24s ease, padding .24s ease, opacity .24s ease;
+      opacity:.0;
+    }
+    .section[data-open="true"] .body{
+      max-height:900px; padding:12px 14px; opacity:1;
+    }
+
+    .row{ display:grid; gap:10px; margin-bottom:10px }
+    .row.inline{ grid-template-columns: 1fr auto; align-items:center }
+    .muted{ color:var(--muted) }
+    .btn{ padding:8px 12px; border-radius:10px; border:1px solid var(--line); background:var(--elev); color:var(--text); font-weight:700 }
+    .btn.primary{ background:var(--brand); border-color:transparent; color:#fff }
+    .btn.danger{ background:#ef4444; border-color:transparent; color:#fff }
+    .chip{ padding:8px 12px; border-radius:999px; border:1px solid var(--line); background:var(--elev); font-weight:700; font-size:13px; width:fit-content }
+
+    .file-input-wrap{ position:relative; display:inline-block }
+    .file-input-wrap input[type="file"]{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      width:100%;
+      height:100%;
+      cursor:pointer;
+      z-index:2;
+    }
+    .file-input-wrap .btn{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      z-index:1;
+    }
+    .file-input-wrap input[type="file"]:focus-visible + .btn{
+      outline:2px solid var(--brand);
+      outline-offset:2px;
+    }
+
+    .admin-card{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:16px 18px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:var(--surface);
+      cursor:pointer;
+      transition: transform var(--speed), border-color var(--speed), background var(--speed);
+      margin-bottom:12px;
+    }
+    .admin-card:focus-visible{
+      outline:2px solid var(--brand);
+      outline-offset:2px;
+    }
+    .admin-card:hover{
+      transform:translateY(-1px);
+      border-color:var(--brand);
+      background:var(--elev);
+    }
+    .admin-card .title{ font-weight:800; font-size:15px; margin-bottom:4px }
+    .admin-card .muted{ font-size:13px }
+    .admin-card .icon{ font-size:20px }
+
+    .avatar-lg{ width:88px; height:88px; border-radius:50%; background:#D1D5DB; background-size:cover; background-position:center; border:2px solid var(--line) }
+    .radio{ display:flex; gap:8px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--elev) }
+    .looma-select{ position:relative; }
+    .looma-select .trigger{
+      width:100%; display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+      background:var(--elev); color:var(--text); font-weight:600;
+      transition: border-color var(--speed), background var(--speed);
+    }
+    .looma-select .trigger i{ font-size:16px; color:var(--muted); transition: transform var(--speed); }
+    .looma-select[data-open="true"] .trigger{ border-color:var(--brand); }
+    .looma-select[data-open="true"] .trigger i{ transform:rotate(180deg); }
+    .looma-select .options{
+      position:absolute; top:calc(100% + 6px); left:0; right:0;
+      border-radius:12px; border:1px solid var(--line); background:var(--surface);
+      box-shadow:var(--shadow); padding:6px 0; display:grid; gap:2px;
+      opacity:0; visibility:hidden; transform:translateY(-4px); transition:opacity var(--speed), transform var(--speed), visibility var(--speed);
+      z-index:240;
+    }
+    .looma-select[data-open="true"] .options{ opacity:1; visibility:visible; transform:translateY(0); }
+    .looma-select .option{
+      padding:10px 14px; text-align:left; border:0; background:none; color:inherit; font-weight:500;
+    }
+    .looma-select .option:hover,
+    .looma-select .option.active{
+      background:var(--elev);
+    }
+
+    /* Modal */
+    .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.45); z-index:120 }
+    .modal.open{ display:flex; animation: fadeUp .16s ease }
+    @keyframes fadeUp{ from{ opacity:0; transform: translateY(6px) } to{ opacity:1; transform:none } }
+    .panel{ width:min(94vw, 520px); border:1px solid var(--line); border-radius:14px; background:var(--surface); overflow:hidden }
+    .panel .head{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; font-weight:800 }
+    .panel .body{ padding:14px; display:grid; gap:10px }
+    .panel .foot{ padding:12px 14px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end }
+    .notice{ padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--elev); color:var(--text) }
+    textarea{ width:100%; min-height:96px; padding:10px 12px; border-radius:10px; resize:vertical; }
+    select{
+      appearance:none; -webkit-appearance:none; -moz-appearance:none;
+      background-image: linear-gradient(135deg, transparent 45%, var(--muted) 45%), linear-gradient(225deg, transparent 45%, var(--muted) 45%);
+      background-size:8px 8px;
+      background-repeat:no-repeat;
+      background-position: calc(100% - 18px) center, calc(100% - 12px) center;
+      padding-right:38px;
+    }
+    select:focus{
+      outline:2px solid var(--brand);
+      outline-offset:2px;
+    }
+    input[type="file"]{
+      color:var(--muted);
+      background:transparent;
+      padding:6px 0;
+      border:none;
+    }
+    input[type="file"]::file-selector-button{
+      color:var(--text);
+      background:var(--elev);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:8px 12px;
+      margin-right:10px;
+      cursor:pointer;
+      transition: background var(--speed), border-color var(--speed);
+    }
+    input[type="file"]::file-selector-button:hover{
+      background:var(--brand);
+      border-color:transparent;
+      color:#fff;
+    }
+
+    /* Active tab helper */
+    .nav a[data-tab="settings"].active,
+    .dock a[data-tab="settings"].active{ background:var(--elev) }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Mobile Top -->
+    <div class="m-top" role="navigation" aria-label="상단 바(모바일)">
+      <div class="m-left"><div class="avatar"></div></div>
+      <div class="m-center"><div class="brand">LOOMA</div></div>
+      <div class="m-right">
+        <a href="notifications.html" aria-label="알림" data-nav class="notif-link"><i class="ri-notification-3-line"></i><span class="notif-badge hidden" data-notif-count></span></a>
+      </div>
+    </div>
+
+    <main class="main">
+      <!-- Sidebar -->
+      <aside class="sidebar" aria-label="사이드바 내비게이션">
+        <div class="side-head"><div class="side-brand">LOOMA</div></div>
+        <div class="me-card hidden" id="sidebarSigned">
+          <div class="avatar" id="sidebarAvatar"></div>
+          <div>
+            <div class="name" id="sidebarName">회원명</div>
+            <div class="id" id="sidebarHandle">@handle</div>
+          </div>
+          <button class="icon-btn" id="btnLogout" aria-label="로그아웃" title="로그아웃"><i class="ri-logout-circle-line"></i></button>
+        </div>
+        <div class="me-card" id="sidebarGuest">
+          <div>
+            <div class="name">Guest</div>
+            <div class="id muted" style="font-size:12px">로그인하고 더 많은 기능을 이용하세요</div>
+          </div>
+          <button class="icon-btn" data-go="login" aria-label="로그인" title="로그인"><i class="ri-login-circle-line"></i></button>
+        </div>
+        <nav class="nav" id="sideNav">
+          <a href="home.html" data-nav data-tab="home"><i class="ri-home-5-line icon"></i><span class="label">홈</span></a>
+          <a href="explore.html" data-nav data-tab="explore"><i class="ri-compass-3-line icon"></i><span class="label">탐색</span></a>
+          <a href="notifications.html" data-nav data-tab="noti" class="notif-nav"><i class="ri-notification-3-line icon"></i><span class="label">알림</span><span class="notif-badge hidden" data-notif-count></span></a>
+          <a href="messages.html" data-nav data-tab="messages"><i class="ri-chat-3-line icon"></i><span class="label">메시지</span></a>
+          <a href="profile.html" data-nav data-tab="profile"><i class="ri-user-3-line icon"></i><span class="label">프로필</span></a>
+          <a href="settings.html" data-nav data-tab="settings" class="active"><i class="ri-settings-3-line icon"></i><span class="label">설정</span></a>
+        </nav>
+      </aside>
+
+      <!-- Center (아코디언 4개 카드) -->
+      <section class="container settings-root with-dock-pad">
+        <!-- 1) 프로필 설정 -->
+        <div class="section" id="secProfile" data-open="false" data-dirty="false">
+          <div class="head" role="button" tabindex="0" aria-controls="secProfileBody" aria-expanded="false">
+            프로필 설정
+            <span class="dirty-flag hidden">변경사항</span>
+            <span class="spacer"></span>
+            <i class="ri-arrow-down-s-line chev" aria-hidden="true"></i>
+          </div>
+          <div class="body" id="secProfileBody">
+            <div class="row inline">
+              <div style="display:flex; gap:12px; align-items:center">
+                <div class="avatar-lg" id="avatarPreview"></div>
+                <div>
+                  <div class="muted" style="margin-bottom:6px">프로필 사진</div>
+                  <div class="file-input-wrap">
+                    <input type="file" id="avatarInput" accept="image/*" aria-label="프로필 사진 선택" />
+                    <span class="btn" id="btnAvatarBrowse">파일 선택</span>
+                  </div>
+                </div>
+              </div>
+              <button class="btn" id="btnAvatarSave">다시 선택</button>
+            </div>
+
+            <div class="row inline">
+              <div>
+                <div class="muted" style="margin-bottom:6px">이름</div>
+                <input type="text" id="nameInput" placeholder="표시 이름"/>
+              </div>
+              <button class="btn" id="btnNameSave">저장</button>
+            </div>
+
+            <div class="muted">아이디(@handle)은 계정 생성 단계에서 지정합니다. 변경은 추후 지원 예정.</div>
+          </div>
+        </div>
+
+        <!-- 2) 계정 설정 -->
+        <div class="section" id="secAccount" data-open="false" data-dirty="false">
+          <div class="head" role="button" tabindex="0" aria-controls="secAccountBody" aria-expanded="false">
+            계정 설정
+            <span class="dirty-flag hidden">변경사항</span>
+            <span class="spacer"></span>
+            <i class="ri-arrow-down-s-line chev" aria-hidden="true"></i>
+          </div>
+          <div class="body" id="secAccountBody">
+            <div class="row inline">
+              <div>
+                <div class="muted" style="margin-bottom:6px">이메일</div>
+                <input type="email" id="emailInput" placeholder="example@mail.com" />
+              </div>
+              <button class="btn" data-open="#modal-email">변경</button>
+            </div>
+
+            <div class="row inline">
+              <div>
+                <div class="muted" style="margin-bottom:6px">전화번호 (010-xxxx-xxxx)</div>
+                <input type="tel" id="phoneInput" placeholder="010-0000-0000" />
+              </div>
+              <button class="btn" data-open="#modal-phone">변경</button>
+            </div>
+
+            <div class="row inline">
+              <div>
+                <div class="muted" style="margin-bottom:6px">비밀번호</div>
+                <input type="password" id="pwMask" value="********" disabled />
+              </div>
+              <button class="btn" data-open="#modal-pw">변경</button>
+            </div>
+
+            <div class="row">
+              <div class="muted" style="font-weight:800">계정 조치 정보</div>
+              <div class="notice">
+                Looma는 계정 안전을 위해 다음 조치 단계를 운용합니다.<br/>
+                <strong>· 계정 일시 정지</strong> — 일정 기간 활동 제한<br/>
+                <strong>· 계정 영구 정지</strong> — 활동 영구 제한<br/>
+                <strong>· 계정 비활성화</strong> — 본인 요청으로 일시 비활성화
+              </div>
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+                <span class="chip" id="accStatus">현재 상태: 정상</span>
+                <button class="btn" data-open="#modal-actions">조치 내역 보기</button>
+                <button class="btn" data-open="#modal-deactivate">계정 비활성화 요청</button>
+              </div>
+            </div>
+
+            <div class="row" style="border-top:1px dashed var(--line); padding-top:12px">
+              <div class="muted" style="font-weight:800">계정 삭제</div>
+              <div class="notice">삭제는 되돌릴 수 없습니다. 모든 콘텐츠와 메타데이터가 제거됩니다.</div>
+              <button class="btn danger" data-open="#modal-delete">계정 삭제</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3) 인터페이스 설정 (즉시 저장 → 보통 dirty 아님) -->
+        <div class="section" id="secInterface" data-open="false" data-dirty="false">
+          <div class="head" role="button" tabindex="0" aria-controls="secInterfaceBody" aria-expanded="false">
+            인터페이스 설정
+            <span class="dirty-flag hidden">변경사항</span>
+            <span class="spacer"></span>
+            <i class="ri-arrow-down-s-line chev" aria-hidden="true"></i>
+          </div>
+          <div class="body" id="secInterfaceBody">
+            <div class="row">
+              <div class="muted" style="margin-bottom:6px">테마</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap" role="group" aria-label="테마 선택">
+                <label class="radio"><input type="radio" name="theme" value="auto" checked> 자동</label>
+                <label class="radio"><input type="radio" name="theme" value="light"> 라이트</label>
+                <label class="radio"><input type="radio" name="theme" value="dark"> 다크</label>
+              </div>
+            </div>
+            <div class="muted">설정은 이 기기에 저장됩니다.</div>
+          </div>
+        </div>
+
+        <!-- 4) 도움말 -->
+        <div class="section" id="secHelp" data-open="false" data-dirty="false">
+          <div class="head" role="button" tabindex="0" aria-controls="secHelpBody" aria-expanded="false">
+            도움말
+            <span class="dirty-flag hidden">변경사항</span>
+            <span class="spacer"></span>
+            <i class="ri-arrow-down-s-line chev" aria-hidden="true"></i>
+          </div>
+          <div class="body" id="secHelpBody">
+            <div class="row">
+              <div class="muted">필요한 도움을 선택하거나, 없으면 직접 문의를 이용하세요.</div>
+              <button class="btn" data-open="#modal-help">도움말 열기</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-card hidden" id="adminPanelCard" role="button" tabindex="0" aria-label="Looma 관리">
+          <div class="admin-card-info">
+            <div class="title">Looma 관리</div>
+            <div class="muted">슈퍼 관리자를 위한 제어판입니다.</div>
+          </div>
+          <i class="ri-external-link-line icon" aria-hidden="true"></i>
+        </div>
+      </section>
+
+      <aside class="rrail" aria-label="오른쪽 영역"></aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+      <div class="row">
+        <div>© 2025 LOOMA. All rights reserved.</div>
+        <div style="display:flex; gap:12px">
+          <a class="muted" href="terms.html" data-nav>이용 약관</a>
+          <a class="muted" href="privacy.html" data-nav>개인정보 처리방침</a>
+          <a class="muted" href="https://luminarylabs.netlify.app" target="_blank" rel="noopener noreferrer">Luminary Labs 소개</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Mobile Dock -->
+    <nav class="dock" role="navigation" aria-label="하단 메뉴(모바일)">
+      <div class="row" id="dockNav">
+        <a href="home.html" data-nav data-tab="home"><i class="ri-home-5-line"></i><span class="label">홈</span></a>
+        <a href="explore.html" data-nav data-tab="explore"><i class="ri-compass-3-line"></i><span class="label">탐색</span></a>
+        <a href="messages.html" data-nav data-tab="messages"><i class="ri-chat-3-line"></i><span class="label">메시지</span></a>
+        <a href="profile.html" data-nav data-tab="profile"><i class="ri-user-3-line"></i><span class="label">프로필</span></a>
+        <a href="settings.html" data-nav data-tab="settings" class="active"><i class="ri-settings-3-line"></i><span class="label">설정</span></a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ===== 공용 모달들 ===== -->
+  <!-- 이메일 변경 -->
+  <div class="modal" id="modal-email" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="이메일 변경">
+      <div class="head">이메일 변경<button class="icon-btn" data-close="#modal-email" title="닫기"><i class="ri-close-line"></i></button></div>
+      <div class="body">
+        <input type="email" id="emailNew" placeholder="새 이메일"/>
+        <div class="notice">변경 후 확인 메일이 전송됩니다.</div>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-email">취소</button>
+        <button class="btn primary" id="emailSave">저장</button>
+      </div>
+    </div>
+  </div>
+  <!-- 전화번호 변경 -->
+  <div class="modal" id="modal-phone" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="전화번호 변경">
+      <div class="head">전화번호 변경<button class="icon-btn" data-close="#modal-phone" title="닫기"><i class="ri-close-line"></i></button></div>
+      <div class="body">
+        <input type="tel" id="phoneNew" placeholder="010-0000-0000" />
+        <div class="notice">현재는 010-계열만 지원합니다.</div>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-phone">취소</button>
+        <button class="btn primary" id="phoneSave">저장</button>
+      </div>
+    </div>
+  </div>
+  <!-- 비밀번호 변경 -->
+  <div class="modal" id="modal-pw" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="비밀번호 변경">
+      <div class="head">비밀번호 변경<button class="icon-btn" data-close="#modal-pw" title="닫기"><i class="ri-close-line"></i></button></div>
+      <div class="body">
+        <input type="password" id="pwCur" placeholder="현재 비밀번호"/>
+        <input type="password" id="pwNew" placeholder="새 비밀번호(8자 이상, 대/소문자·숫자 포함)"/>
+        <input type="password" id="pwNew2" placeholder="새 비밀번호 확인"/>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-pw">취소</button>
+        <button class="btn primary" id="pwSave">저장</button>
+      </div>
+    </div>
+  </div>
+  <!-- 조치 내역 -->
+  <div class="modal" id="modal-actions" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="계정 조치 내역">
+      <div class="head">계정 조치 내역<button class="icon-btn" data-close="#modal-actions" title="닫기"><i class="ri-close-line"></i></button></div>
+      <div class="body" id="actionLogBody"><div class="muted">현재 표시할 조치 내역이 없습니다. (정상)</div></div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-actions">닫기</button>
+      </div>
+    </div>
+  </div>
+  <!-- 비활성화 요청 -->
+  <div class="modal" id="modal-deactivate" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="계정 비활성화">
+      <div class="head">계정 비활성화<button class="icon-btn" data-close="#modal-deactivate" title="닫기"><i class="ri-close-line"></i></button></div>
+      <div class="body">
+        <div class="notice">비활성화하면 프로필/게시물이 숨겨지며 로그인으로 다시 활성화할 수 있습니다.</div>
+        <label><input type="checkbox" id="deactConfirm"/> 안내를 읽었으며 동의합니다.</label>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-deactivate">취소</button>
+        <button class="btn primary" id="deactDo" disabled>비활성화</button>
+      </div>
+    </div>
+  </div>
+  <!-- 계정 삭제 -->
+  <div class="modal" id="modal-delete" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="계정 삭제">
+      <div class="head">계정 삭제<button class="icon-btn" data-close="#modal-delete" title="닫기"><i class="ri-close-line"></i></button></div>
+      <div class="body">
+        <div class="notice">삭제는 영구적입니다. 복구할 수 없습니다.</div>
+        <label class="muted" for="delReason">삭제 사유</label>
+        <div class="looma-select" data-looma-select data-target="delReason" data-placeholder="선택하세요">
+          <button class="trigger" data-select-trigger>
+            <span data-select-label>선택하세요</span>
+            <i class="ri-arrow-down-s-line"></i>
+          </button>
+          <div class="options" role="listbox">
+            <button class="option" data-select-option data-value="다른 서비스를 사용할 예정">다른 서비스를 사용할 예정</button>
+            <button class="option" data-select-option data-value="두 번째 계정을 만들었음">두 번째 계정을 만들었음</button>
+            <button class="option" data-select-option data-value="개인정보/보안 우려">개인정보/보안 우려</button>
+            <button class="option" data-select-option data-value="사용성 불만">사용성 불만</button>
+            <button class="option" data-select-option data-value="기타(아래에 입력)">기타(아래에 입력)</button>
+          </div>
+        </div>
+        <input type="hidden" id="delReason" value="">
+        <textarea id="delDetail" placeholder="기타 사유(선택)"></textarea>
+        <input id="delConfirm" placeholder="@아이디를 입력해 확인"/>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-delete">취소</button>
+        <button class="btn danger" id="delDo" disabled>영구 삭제</button>
+      </div>
+    </div>
+  </div>
+  <!-- 도움말 -->
+  <div class="modal" id="modal-help" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="도움말">
+      <div class="head">어떤 도움이 필요하신가요?<button class="icon-btn" data-close="#modal-help" title="닫기"><i class="ri-close-line"></i></button></div>
+      <div class="body">
+        <div style="display:flex; gap:8px; flex-wrap:wrap" id="helpList">
+          <button class="chip" data-help="login">로그인 문제</button>
+          <button class="chip" data-help="recover">계정 복구</button>
+          <button class="chip" data-help="report">신고/차단</button>
+          <button class="chip" data-help="bug">버그 제보</button>
+          <button class="chip" data-help="other">기타</button>
+        </div>
+        <div id="helpAnswer" class="hidden"></div>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-help">닫기</button>
+        <a class="btn" id="btnMail" target="_blank" rel="noopener">이메일 문의</a>
+        <a class="btn primary" href="https://instagram.com/nimxess" target="_blank" rel="noopener">@nimxess DM</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 변경사항 경고 모달 -->
+  <div class="modal" id="modal-unsaved" aria-hidden="true">
+    <div class="panel" role="dialog" aria-label="변경사항 경고">
+      <div class="head">변경사항이 저장되지 않았습니다<button class="icon-btn" data-close="#modal-unsaved" title="닫기"><i class="ri-close-line"></i></button></div>
+      <div class="body">
+        <div class="notice">이동하면 현재 섹션의 변경사항이 사라질 수 있어요. 계속 이동할까요?</div>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-unsaved">취소</button>
+        <button class="btn primary" id="unsavedContinue">계속 이동</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toastRoot" style="position:fixed; right:12px; bottom:calc(var(--footer-h) + 12px); z-index:140"></div>
+
+  <script src="looma-select.js"></script>
+  <script>
+    (() => {
+      const $ = (selector, scope = document) => scope.querySelector(selector);
+      const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
+
+      const elements = {
+        sidebarSigned: $('#sidebarSigned'),
+        sidebarGuest: $('#sidebarGuest'),
+        sidebarName: $('#sidebarName'),
+        sidebarHandle: $('#sidebarHandle'),
+        sidebarAvatar: $('#sidebarAvatar'),
+        btnLogout: $('#btnLogout'),
+        toastRoot: $('#toastRoot'),
+        avatarPreview: $('#avatarPreview'),
+        avatarInput: $('#avatarInput'),
+        btnAvatarSave: $('#btnAvatarSave'),
+        nameInput: $('#nameInput'),
+        btnNameSave: $('#btnNameSave'),
+        emailInput: $('#emailInput'),
+        phoneInput: $('#phoneInput'),
+        emailNew: $('#emailNew'),
+        phoneNew: $('#phoneNew'),
+        emailSave: $('#emailSave'),
+        phoneSave: $('#phoneSave'),
+        pwCur: $('#pwCur'),
+        pwNew: $('#pwNew'),
+        pwNew2: $('#pwNew2'),
+        pwSave: $('#pwSave'),
+        pwMask: $('#pwMask'),
+        deactConfirm: $('#deactConfirm'),
+        deactDo: $('#deactDo'),
+        delReason: $('#delReason'),
+        delDetail: $('#delDetail'),
+        delConfirm: $('#delConfirm'),
+        delDo: $('#delDo'),
+        helpList: $('#helpList'),
+        helpAnswer: $('#helpAnswer'),
+        btnMail: $('#btnMail'),
+        unsavedContinue: $('#unsavedContinue'),
+        adminPanelCard: $('#adminPanelCard'),
+      };
+
+      const state = {
+        session: null,
+        profile: null,
+        pendingAction: null,
+      };
+
+      const helpMap = {
+        login: '로그인 오류가 반복되면 비밀번호 재설정 후 시도해 주세요. 계속되면 아래 문의 채널로 연락 바랍니다.',
+        recover: '등록 이메일/전화로 인증 후 복구할 수 있습니다. 등록 정보가 없으면 문의로 본인 확인 절차를 안내해 드려요.',
+        report: '프로필/게시물의 … 메뉴에서 신고/차단할 수 있습니다. 긴급 사안은 이메일/DM으로도 알려주세요.',
+      bug: '버그 재현 경로와 화면 녹화/스크린샷이 있으면 해결에 큰 도움이 됩니다.',
+      other: '상세 상황을 알려주시면 신속히 답변드릴게요.',
+      };
+      const actionTypeLabels = {
+        deactivated: '계정 비활성화',
+        deleted: '계정 삭제',
+        suspension: '계정 정지',
+        restored: '계정 복구',
+      };
+      const actionLogBody = $('#actionLogBody');
+      const SUPER_ADMIN_HANDLES = new Set(['@nuguls']);
+      const ADMIN_FLAG_KEYWORDS = new Set([
+        'admin',
+        'administrator',
+        'moderator',
+        'manager',
+        'owner',
+        'staff',
+        'operator',
+        'maintainer',
+        'superadmin',
+      ]);
+      const ADMIN_FLAG_BLACKLIST = new Set(['authenticated', 'user', 'member', 'basic']);
+      const SUPERADMIN_FLAG_KEYWORDS = new Set(['superadmin', 'owner', 'root', 'founder']);
+
+      function renderAccountActions(actions) {
+        if (!actionLogBody) return;
+        actionLogBody.innerHTML = '';
+        if (!Array.isArray(actions) || !actions.length) {
+          const empty = document.createElement('div');
+          empty.className = 'muted';
+          empty.textContent = '현재 조치 내역이 없습니다.';
+          actionLogBody.appendChild(empty);
+          return;
+        }
+        actions.forEach((entry) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'notice';
+          wrapper.style.marginBottom = '8px';
+
+          const title = document.createElement('div');
+          title.style.fontWeight = '700';
+          title.textContent = actionTypeLabels[entry.action] || entry.action;
+          wrapper.appendChild(title);
+
+          if (entry.createdAt) {
+            const when = document.createElement('div');
+            when.className = 'muted';
+            when.style.marginTop = '4px';
+            when.textContent = formatTime(entry.createdAt);
+            wrapper.appendChild(when);
+          }
+
+          if (entry.reason) {
+            const reason = document.createElement('div');
+            reason.style.marginTop = '6px';
+            reason.textContent = `사유: ${entry.reason}`;
+            wrapper.appendChild(reason);
+          }
+
+          if (entry.detail) {
+            const detail = document.createElement('div');
+            detail.className = 'muted';
+            detail.style.marginTop = '4px';
+            detail.textContent = entry.detail;
+            wrapper.appendChild(detail);
+          }
+
+          if (entry.actor && entry.actor.handle) {
+            const actor = document.createElement('div');
+            actor.className = 'muted';
+            actor.style.marginTop = '4px';
+            actor.textContent = `처리자: ${entry.actor.handle}`;
+            wrapper.appendChild(actor);
+          }
+
+          actionLogBody.appendChild(wrapper);
+        });
+      }
+
+      function toHandleLower(value) {
+        if (!value) return '';
+        return String(value).trim().toLowerCase();
+      }
+
+      function collectRoleFlags(user) {
+        if (!user) return [];
+        const flags = new Set();
+        const push = (value) => {
+          if (!value) return;
+          if (typeof value === 'string') {
+            const lowered = value.trim().toLowerCase();
+            if (!lowered) return;
+            flags.add(lowered);
+            return;
+          }
+          if (typeof value === 'object') {
+            ['id', 'name', 'role', 'key', 'value', 'label', 'code', 'slug', 'type']
+              .map((key) => value[key])
+              .forEach((candidate) => {
+                if (typeof candidate === 'string') {
+                  const lowered = candidate.trim().toLowerCase();
+                  if (lowered) flags.add(lowered);
+                }
+              });
+          }
+        };
+        if (Array.isArray(user.roles)) user.roles.forEach(push);
+        if (Array.isArray(user.permissions)) user.permissions.forEach(push);
+        if (Array.isArray(user.capabilities)) user.capabilities.forEach(push);
+        if (Array.isArray(user.tags)) user.tags.forEach(push);
+        if (Array.isArray(user.privileges)) user.privileges.forEach(push);
+        if (Array.isArray(user.scopes)) user.scopes.forEach(push);
+        [
+          user.role,
+          user.adminRole,
+          user.accountRole,
+          user.adminLevel,
+          user.tier,
+          user.type,
+        ].forEach(push);
+        if (user.isAdmin === true || user.admin === true) push('admin');
+        if (user.isSuperAdmin === true || user.superadmin === true) push('superadmin');
+        if (user.isOwner === true || user.owner === true) push('owner');
+        return Array.from(flags);
+      }
+
+      function isAdminUser(user) {
+        if (!user) return false;
+        const handle = toHandleLower(user.handle);
+        if (SUPER_ADMIN_HANDLES.has(handle)) return true;
+        const roles = collectRoleFlags(user);
+        const hasAdminFlag = roles.some((role) => {
+          if (!role || ADMIN_FLAG_BLACKLIST.has(role)) return false;
+          if (ADMIN_FLAG_KEYWORDS.has(role)) return true;
+          const tokens = role.split(/[^a-z0-9]+/).filter(Boolean);
+          return tokens.some((token) => ADMIN_FLAG_KEYWORDS.has(token));
+        });
+        return hasAdminFlag;
+      }
+
+      function isSuperAdminUser(user) {
+        if (!user) return false;
+        const handle = toHandleLower(user.handle);
+        if (SUPER_ADMIN_HANDLES.has(handle)) return true;
+        const roles = collectRoleFlags(user);
+        return roles.some((role) => {
+          if (!role) return false;
+          if (SUPERADMIN_FLAG_KEYWORDS.has(role)) return true;
+          const tokens = role.split(/[^a-z0-9]+/).filter(Boolean);
+          return tokens.some((token) => SUPERADMIN_FLAG_KEYWORDS.has(token));
+        });
+      }
+
+      function updateAdminPanel() {
+        if (!elements.adminPanelCard) return;
+        const sourceUser = state.profile || state.session;
+        const isAdmin = isAdminUser(sourceUser);
+        const isSuper = isSuperAdminUser(sourceUser);
+        elements.adminPanelCard.classList.toggle('hidden', !isAdmin);
+        if (isAdmin) {
+          elements.adminPanelCard.dataset.role = isSuper ? 'superadmin' : 'admin';
+          elements.adminPanelCard.setAttribute('aria-hidden', 'false');
+        } else {
+          delete elements.adminPanelCard.dataset.role;
+          elements.adminPanelCard.setAttribute('aria-hidden', 'true');
+        }
+      }
+
+      async function loadAccountActions() {
+        if (!actionLogBody) return;
+        actionLogBody.innerHTML = '';
+        const loading = document.createElement('div');
+        loading.className = 'muted';
+        loading.textContent = '불러오는 중…';
+        actionLogBody.appendChild(loading);
+        try {
+          const res = await fetchJSON('/api/account/actions');
+          renderAccountActions(res?.actions || []);
+        } catch (err) {
+          if (err?.status === 401) {
+            location.href = 'auth.html';
+            return;
+          }
+          const message = err?.data?.message ||
+            (err?.status === 501 ? '계정 조치 기능이 아직 구성되지 않았습니다.' : '조치 내역을 불러오지 못했습니다.');
+          actionLogBody.innerHTML = '';
+          const info = document.createElement('div');
+          info.className = 'muted';
+          info.textContent = message;
+          actionLogBody.appendChild(info);
+        }
+      }
+
+      document.querySelectorAll('a[data-nav]').forEach((a) => {
+        const href = a.getAttribute('href') || '';
+        a.addEventListener('click', (event) => {
+          if (!href || href.startsWith('#') || href.startsWith('http')) return;
+          event.preventDefault();
+          if (document.startViewTransition) {
+            document.startViewTransition(() => {
+              location.href = href;
+            });
+          } else {
+            document.body.style.opacity = '0';
+            setTimeout(() => { location.href = href; }, 140);
+          }
+        });
+      });
+      document.querySelectorAll('.nav a[data-tab], .dock a[data-tab]').forEach((a) => {
+        a.classList.toggle('active', a.dataset.tab === 'settings');
+      });
+
+      function fetchJSON(path, { method = 'GET', body, headers } = {}) {
+        const options = {
+          method,
+          credentials: 'include',
+          headers: {
+            ...(body !== undefined && !(body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
+            ...(headers || {}),
+          },
+        };
+        if (body !== undefined) {
+          options.body = body instanceof FormData ? body : JSON.stringify(body);
+        }
+        return fetch(path, options).then(async (res) => {
+          const contentType = res.headers.get('content-type') || '';
+          const payload = contentType.includes('application/json')
+            ? await res.json().catch(() => null)
+            : await res.text().catch(() => null);
+          if (!res.ok) {
+            const err = new Error(typeof payload === 'string' ? payload : 'Request failed');
+            err.status = res.status;
+            err.data = payload;
+            throw err;
+          }
+          return payload;
+        });
+      }
+
+      function toast(message) {
+        if (!elements.toastRoot) return;
+        const node = document.createElement('div');
+        node.textContent = message;
+        node.style.cssText = 'margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:var(--shadow);opacity:0;transform:translateY(6px);transition:.2s;';
+        elements.toastRoot.appendChild(node);
+        requestAnimationFrame(() => {
+          node.style.opacity = '1';
+          node.style.transform = 'none';
+        });
+        setTimeout(() => {
+          node.style.opacity = '0';
+          node.style.transform = 'translateY(6px)';
+          setTimeout(() => node.remove(), 220);
+        }, 2200);
+      }
+
+      function openModal(selector) {
+        const modal = document.querySelector(selector);
+        if (!modal) return;
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        switch (selector) {
+          case '#modal-email':
+            if (elements.emailNew) {
+              elements.emailNew.value = state.profile?.email || '';
+              elements.emailNew.focus();
+            }
+            break;
+          case '#modal-phone':
+            if (elements.phoneNew) {
+              elements.phoneNew.value = state.profile?.phone || '';
+              elements.phoneNew.focus();
+            }
+            break;
+          case '#modal-pw':
+            elements.pwCur?.focus();
+            break;
+          case '#modal-actions':
+            loadAccountActions();
+            break;
+          default:
+            break;
+        }
+      }
+
+      function closeModal(selector) {
+        const modal = document.querySelector(selector);
+        if (!modal) return;
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+      }
+
+      function applyAvatar(element, url, fallback = '') {
+        if (!element) return;
+        if (url) {
+          const safe = String(url).replace(/"/g, '%22').replace(/'/g, '%27');
+          element.style.backgroundImage = `url("${safe}")`;
+          element.textContent = '';
+        } else {
+          element.style.backgroundImage = '';
+          const text = (fallback || '').replace(/^@/, '').trim();
+          element.textContent = text ? text.charAt(0).toUpperCase() : '';
+        }
+      }
+
+      function setDirty(section, dirty) {
+        if (!section) return;
+        section.setAttribute('data-dirty', dirty ? 'true' : 'false');
+        const badge = section.querySelector('.dirty-flag');
+        if (badge) badge.classList.toggle('hidden', !dirty);
+      }
+
+      function isDirty(section) {
+        return section?.getAttribute('data-dirty') === 'true';
+      }
+
+      function closeAllExcept(target) {
+        document.querySelectorAll('.section').forEach((section) => {
+          if (section !== target) {
+            section.setAttribute('data-open', 'false');
+            section.querySelector('.head')?.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+
+      function requestSwitch(action) {
+        state.pendingAction = action;
+        openModal('#modal-unsaved');
+      }
+
+      function toggleSection(section, forceOpen) {
+        if (!section) return;
+        const currentlyOpen = section.getAttribute('data-open') === 'true';
+        const wantOpen = forceOpen !== undefined ? forceOpen : !currentlyOpen;
+        if (wantOpen) {
+          const openSections = Array.from(document.querySelectorAll('.section[data-open="true"]'));
+          const dirtyOpen = openSections.find((sec) => isDirty(sec) && sec !== section);
+          if (dirtyOpen) {
+            requestSwitch(() => {
+              closeAllExcept(section);
+              section.setAttribute('data-open', 'true');
+              section.querySelector('.head')?.setAttribute('aria-expanded', 'true');
+            });
+            return;
+          }
+          closeAllExcept(section);
+          section.setAttribute('data-open', 'true');
+          section.querySelector('.head')?.setAttribute('aria-expanded', 'true');
+        } else {
+          if (isDirty(section)) {
+            requestSwitch(() => {
+              section.setAttribute('data-open', 'false');
+              section.querySelector('.head')?.setAttribute('aria-expanded', 'false');
+            });
+            return;
+          }
+          section.setAttribute('data-open', 'false');
+          section.querySelector('.head')?.setAttribute('aria-expanded', 'false');
+        }
+      }
+
+      function updateSidebar() {
+        const viewer = state.session;
+        if (viewer) {
+          elements.sidebarSigned?.classList.remove('hidden');
+          elements.sidebarGuest?.classList.add('hidden');
+          if (elements.sidebarName) elements.sidebarName.textContent = viewer.name || viewer.handle || '회원';
+          if (elements.sidebarHandle) elements.sidebarHandle.textContent = viewer.handle || '';
+          const fallback = viewer.name || viewer.handle || 'U';
+          applyAvatar(elements.sidebarAvatar, viewer.avatarUrl || null, fallback);
+          const mobileAvatar = document.querySelector('.m-left .avatar');
+          applyAvatar(mobileAvatar, viewer.avatarUrl || null, fallback);
+        } else {
+          elements.sidebarSigned?.classList.add('hidden');
+          elements.sidebarGuest?.classList.remove('hidden');
+          if (elements.sidebarName) elements.sidebarName.textContent = '회원명';
+          if (elements.sidebarHandle) elements.sidebarHandle.textContent = '@handle';
+          applyAvatar(elements.sidebarAvatar, null, 'G');
+          const mobileAvatar = document.querySelector('.m-left .avatar');
+          applyAvatar(mobileAvatar, null, 'G');
+        }
+        updateAdminPanel();
+      }
+
+      function getPersistedName() {
+        const stored =
+          (state.profile?.name || '').trim() ||
+          (state.session?.name || '').trim();
+        if (stored) return stored;
+        const handleFallback = (state.profile?.handle || state.session?.handle || '')
+          .replace(/^@/, '')
+          .trim();
+        return handleFallback;
+      }
+
+      function fillProfileForm(options = {}) {
+        const preserveProfileInputs = Boolean(options.preserveProfileInputs);
+        const profile = state.profile;
+        const fallback = profile?.name || profile?.handle || 'U';
+        applyAvatar(elements.avatarPreview, profile?.avatarUrl || null, fallback);
+        if (elements.nameInput) {
+          if (!preserveProfileInputs || elements.nameInput.dataset.userEdited !== 'true') {
+            elements.nameInput.value = profile?.name || '';
+            delete elements.nameInput.dataset.userEdited;
+          }
+        }
+        if (elements.emailInput) elements.emailInput.value = profile?.email || '';
+        if (elements.phoneInput) elements.phoneInput.value = profile?.phone || '';
+        if (elements.pwMask) elements.pwMask.value = '********';
+        if (!preserveProfileInputs) {
+          setDirty($('#secProfile'), false);
+        }
+        setDirty($('#secAccount'), false);
+        updateAdminPanel();
+      }
+
+      function normalizePhoneInput(raw) {
+        const digits = String(raw || '').replace(/\D/g, '');
+        if (digits.length !== 11 || !digits.startsWith('010')) return null;
+        return '010-' + digits.slice(3, 7) + '-' + digits.slice(7);
+      }
+
+      function resolveProfileError(code) {
+        switch (code) {
+          case 'name-required':
+            return '이름을 입력해 주세요.';
+          case 'handle-invalid':
+            return '아이디 형식이 올바르지 않습니다.';
+          case 'handle-taken':
+            return '이미 사용 중인 아이디입니다.';
+          case 'email-invalid':
+            return '올바른 이메일 형식이 아닙니다.';
+          case 'email-taken':
+            return '이미 사용 중인 이메일입니다.';
+          case 'phone-invalid':
+            return '전화번호 형식을 확인해 주세요.';
+          case 'phone-taken':
+            return '이미 사용 중인 전화번호입니다.';
+          case 'avatar-too-large':
+            return '이미지 용량이 너무 큽니다. (최대 10MB)';
+          case 'avatar-invalid':
+            return '이미지를 처리하지 못했습니다.';
+          default:
+            return '변경을 저장하지 못했습니다.';
+        }
+      }
+
+      function resolvePasswordError(code) {
+        switch (code) {
+          case 'password-mismatch':
+            return '현재 비밀번호가 일치하지 않습니다.';
+          case 'password-weak':
+            return '새 비밀번호 규칙을 확인해 주세요.';
+          case 'password-same':
+            return '현재 비밀번호와 다른 비밀번호를 사용해 주세요.';
+          case 'password-unavailable':
+            return '계정 정보를 확인할 수 없습니다.';
+          default:
+            return '비밀번호를 변경하지 못했습니다.';
+        }
+      }
+
+      async function updateProfile(
+        partial,
+        { successMessage, section, closeSelector, preserveProfileInputs = false } = {},
+      ) {
+        const payload = { ...partial };
+        if ('name' in payload) {
+          payload.name = String(payload.name || '').trim();
+        } else {
+          payload.name = getPersistedName();
+        }
+        if (!payload.name) {
+          toast('이름을 입력해 주세요.');
+          return false;
+        }
+        try {
+          const res = await fetchJSON('/api/profile', { method: 'PUT', body: payload });
+          if (res?.user) {
+            state.profile = res.user;
+            if (state.session) {
+              state.session = { ...state.session, ...res.user };
+            } else {
+              state.session = { ...res.user };
+            }
+            fillProfileForm({ preserveProfileInputs });
+            updateSidebar();
+            if (section) setDirty(section, false);
+            if (closeSelector) closeModal(closeSelector);
+            if (successMessage) toast(successMessage);
+            return true;
+          }
+          return false;
+        } catch (err) {
+          if (err.status === 401) {
+            location.href = 'auth.html';
+            return false;
+          }
+          const message = resolveProfileError(err?.data?.error);
+          toast(message);
+          return false;
+        }
+        return false;
+      }
+
+      async function updatePassword(currentPassword, newPassword) {
+        try {
+          await fetchJSON('/api/account/password', {
+            method: 'PUT',
+            body: { currentPassword, newPassword },
+          });
+          toast('비밀번호가 변경되었습니다.');
+          closeModal('#modal-pw');
+          if (elements.pwCur) elements.pwCur.value = '';
+          if (elements.pwNew) elements.pwNew.value = '';
+          if (elements.pwNew2) elements.pwNew2.value = '';
+        } catch (err) {
+          if (err.status === 401) {
+            location.href = 'auth.html';
+            return;
+          }
+          const message = resolvePasswordError(err?.data?.error);
+          toast(message);
+        }
+      }
+
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result || '';
+            const base64 = typeof result === 'string' ? result.split(',').pop() : '';
+            resolve(base64 || '');
+          };
+          reader.onerror = () => reject(reader.error || new Error('파일을 읽지 못했습니다.'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function loadSession() {
+        try {
+          const res = await fetchJSON('/api/session');
+          state.session = res?.user || null;
+          if (!state.session?.id) {
+            location.href = 'auth.html';
+            return false;
+          }
+          updateSidebar();
+          return true;
+        } catch (err) {
+          location.href = 'auth.html';
+          return false;
+        }
+      }
+
+      async function loadProfile() {
+        try {
+          const res = await fetchJSON('/api/profile');
+          state.profile = res?.user || null;
+          if (!state.profile) {
+            toast('프로필 정보를 불러오지 못했습니다.');
+            return;
+          }
+          if (state.session) {
+            state.session = { ...state.session, ...state.profile };
+          }
+          fillProfileForm();
+          updateSidebar();
+          if (elements.delConfirm) {
+            elements.delConfirm.value = '';
+            elements.delConfirm.placeholder = state.profile?.handle || '@handle';
+          }
+          if (elements.delDo) elements.delDo.disabled = true;
+          if (window.LoomaSelect && typeof window.LoomaSelect.set === 'function') {
+            window.LoomaSelect.set('delReason', '');
+          }
+          if (elements.delReason) elements.delReason.value = '';
+          if (elements.delDetail) elements.delDetail.value = '';
+          if (elements.deactConfirm) elements.deactConfirm.checked = false;
+          if (elements.deactDo) elements.deactDo.disabled = true;
+        } catch (err) {
+          if (err.status === 401) {
+            location.href = 'auth.html';
+            return;
+          }
+          toast('프로필 정보를 불러오지 못했습니다.');
+        }
+      }
+
+      function bindAccordions() {
+        document.querySelectorAll('.section .head').forEach((head) => {
+          head.addEventListener('click', () => toggleSection(head.parentElement));
+          head.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              toggleSection(head.parentElement);
+            }
+          });
+        });
+        document.querySelectorAll('.section').forEach((section) => toggleSection(section, false));
+      }
+
+      function bindModals() {
+        document.addEventListener('click', (event) => {
+          const openTarget = event.target.closest('[data-open]');
+          const openSel = openTarget?.getAttribute('data-open');
+          if (typeof openSel === 'string' && openSel.trim().startsWith('#')) {
+            event.preventDefault();
+            openModal(openSel);
+            return;
+          }
+          const closeSel = event.target.closest('[data-close]')?.getAttribute('data-close');
+          if (closeSel) {
+            event.preventDefault();
+            closeModal(closeSel);
+            return;
+          }
+          if (event.target.classList.contains('modal')) {
+            closeModal('#' + event.target.id);
+          }
+        });
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            document.querySelectorAll('.modal.open').forEach((modal) => {
+              modal.classList.remove('open');
+              modal.setAttribute('aria-hidden', 'true');
+            });
+          }
+        });
+        elements.unsavedContinue?.addEventListener('click', () => {
+          if (typeof state.pendingAction === 'function') state.pendingAction();
+          state.pendingAction = null;
+          closeModal('#modal-unsaved');
+        });
+      }
+
+      function bindProfileEvents() {
+        const secProfile = $('#secProfile');
+        let avatarUploading = false;
+
+        const shouldPreserveProfileInputs = () => elements.nameInput?.dataset.userEdited === 'true';
+
+        const uploadAvatar = async (file) => {
+          if (!file) return false;
+          if (avatarUploading) {
+            toast('이미지를 업로드 중입니다. 잠시만 기다려 주세요.');
+            return false;
+          }
+          avatarUploading = true;
+          try {
+            const data = await fileToBase64(file);
+            const success = await updateProfile(
+              {
+                avatar: {
+                  filename: file.name || 'avatar',
+                  contentType: file.type || 'image/jpeg',
+                  data,
+                },
+              },
+              {
+                successMessage: '프로필 사진이 저장되었습니다.',
+                preserveProfileInputs: shouldPreserveProfileInputs(),
+              },
+            );
+            return Boolean(success);
+          } catch (error) {
+            toast(error.message || '이미지를 처리하지 못했습니다.');
+            return false;
+          } finally {
+            avatarUploading = false;
+            if (elements.avatarInput) elements.avatarInput.value = '';
+          }
+        };
+
+        if (elements.avatarInput) {
+          elements.avatarInput.addEventListener('change', async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            if (avatarUploading) {
+              toast('이미지를 업로드 중입니다. 잠시만 기다려 주세요.');
+              event.target.value = '';
+              return;
+            }
+            const fallback = state.profile?.name || state.profile?.handle || 'U';
+            const previousAvatar = state.profile?.avatarUrl || null;
+            const previewURL = URL.createObjectURL(file);
+            applyAvatar(elements.avatarPreview, previewURL, fallback);
+            const success = await uploadAvatar(file);
+            URL.revokeObjectURL(previewURL);
+            if (!success) {
+              applyAvatar(elements.avatarPreview, previousAvatar, fallback);
+            }
+          });
+        }
+        if (elements.btnAvatarSave) {
+          elements.btnAvatarSave.addEventListener('click', () => {
+            elements.avatarInput?.click();
+          });
+        }
+        if (elements.nameInput) {
+          elements.nameInput.addEventListener('input', () => {
+            setDirty(secProfile, true);
+            elements.nameInput.dataset.userEdited = 'true';
+          });
+        }
+        elements.btnNameSave?.addEventListener('click', async () => {
+          const value = (elements.nameInput?.value || '').trim();
+          if (!value) {
+            toast('이름을 입력해 주세요.');
+            return;
+          }
+          const success = await updateProfile(
+            { name: value },
+            { successMessage: '이름이 저장되었습니다.', section: secProfile },
+          );
+          if (success && elements.nameInput) {
+            delete elements.nameInput.dataset.userEdited;
+          }
+        });
+      }
+
+      function bindAccountEvents() {
+        const secAccount = $('#secAccount');
+        if (elements.emailInput) {
+          elements.emailInput.addEventListener('input', () => setDirty(secAccount, true));
+        }
+        if (elements.phoneInput) {
+          elements.phoneInput.addEventListener('input', () => setDirty(secAccount, true));
+        }
+        elements.emailSave?.addEventListener('click', async () => {
+          const value = (elements.emailNew?.value || '').trim();
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+            toast('올바른 이메일을 입력해 주세요.');
+            return;
+          }
+          await updateProfile(
+            { email: value },
+            { successMessage: '이메일이 변경되었습니다.', section: secAccount, closeSelector: '#modal-email' },
+          );
+        });
+        elements.phoneSave?.addEventListener('click', async () => {
+          const normalized = normalizePhoneInput(elements.phoneNew?.value);
+          if (!normalized) {
+            toast('전화번호는 010-0000-0000 형식이어야 합니다.');
+            return;
+          }
+          await updateProfile(
+            { phone: normalized },
+            { successMessage: '전화번호가 변경되었습니다.', section: secAccount, closeSelector: '#modal-phone' },
+          );
+        });
+        elements.pwSave?.addEventListener('click', async () => {
+          const current = elements.pwCur?.value || '';
+          const next = elements.pwNew?.value || '';
+          const confirm = elements.pwNew2?.value || '';
+          if (!current || !next || !confirm) {
+            toast('모든 비밀번호 입력칸을 채워 주세요.');
+            return;
+          }
+          if (
+            next.length < 8 ||
+            !/[A-Z]/.test(next) ||
+            !/[a-z]/.test(next) ||
+            !/\d/.test(next) ||
+            !/[^A-Za-z0-9]/.test(next)
+          ) {
+            toast('새 비밀번호는 대/소문자, 숫자, 특수문자를 포함해 8자 이상이어야 합니다.');
+            return;
+          }
+          if (next !== confirm) {
+            toast('새 비밀번호 확인이 일치하지 않습니다.');
+            return;
+          }
+          await updatePassword(current, next);
+        });
+      }
+
+      function bindTheme() {
+        const themeRadios = $$('input[name="theme"]');
+        const applyTheme = (theme) => {
+          if (window.LoomaTheme && typeof window.LoomaTheme.set === 'function') {
+            window.LoomaTheme.set(theme);
+            return;
+          }
+          if (theme === 'auto') {
+            document.documentElement.removeAttribute('data-theme');
+          } else {
+            document.documentElement.setAttribute('data-theme', theme);
+          }
+          try {
+            localStorage.setItem('looma:theme', theme);
+          } catch (err) {
+            /* ignore storage failures */
+          }
+        };
+        const getTheme = () => {
+          if (window.LoomaTheme && typeof window.LoomaTheme.get === 'function') {
+            return window.LoomaTheme.get();
+          }
+          try {
+            const stored = localStorage.getItem('looma:theme');
+            return stored === 'light' || stored === 'dark' ? stored : 'auto';
+          } catch (err) {
+            return 'auto';
+          }
+        };
+        const current = getTheme();
+        applyTheme(current);
+        themeRadios.forEach((radio) => {
+          radio.checked = radio.value === current;
+          radio.addEventListener('change', () => applyTheme(radio.value));
+        });
+        if (window.LoomaTheme && typeof window.LoomaTheme.onChange === 'function') {
+          window.LoomaTheme.onChange((theme) => {
+            themeRadios.forEach((radio) => {
+              radio.checked = radio.value === theme;
+            });
+          });
+        }
+      }
+
+      function bindHelp() {
+        elements.helpList?.addEventListener('click', (event) => {
+          const key = event.target.closest('[data-help]')?.getAttribute('data-help');
+          if (!key) return;
+          const answer = helpMap[key] || '지원팀에 문의해 주세요.';
+          if (elements.helpAnswer) {
+            elements.helpAnswer.textContent = answer;
+            elements.helpAnswer.classList.remove('hidden');
+          }
+          if (elements.btnMail) {
+            const subject = encodeURIComponent(`[Looma] 도움말 요청: ${key}`);
+            const body = encodeURIComponent(
+              `안녕하세요.\n\n문제 유형: ${key}\n자세한 설명:\n\n사용자 아이디: ${state.session?.handle || ''}\n`,
+            );
+            elements.btnMail.href = `mailto:support@looma.app?subject=${subject}&body=${body}`;
+          }
+        });
+      }
+
+      function bindAccountActions() {
+        if (elements.deactDo) elements.deactDo.disabled = true;
+        elements.deactConfirm?.addEventListener('change', () => {
+          if (elements.deactDo) elements.deactDo.disabled = !elements.deactConfirm.checked;
+        });
+        elements.deactDo?.addEventListener('click', async () => {
+          if (!elements.deactConfirm?.checked) return;
+          elements.deactDo.disabled = true;
+          try {
+            await fetchJSON('/api/account/deactivate', {
+              method: 'POST',
+              body: { reason: 'self' },
+            });
+            toast('계정이 비활성화되었습니다. 잠시 후 로그아웃됩니다.');
+            closeModal('#modal-deactivate');
+            setTimeout(() => { location.href = 'auth.html'; }, 600);
+          } catch (err) {
+            if (err?.status === 401) {
+              location.href = 'auth.html';
+              return;
+            }
+            const message = err?.data?.message || (err?.data?.error === 'account-already-deactivated'
+              ? '이미 비활성화된 계정입니다.'
+              : err?.data?.error === 'account-suspended'
+              ? '정지된 계정에서는 이 기능을 사용할 수 없습니다.'
+              : '계정을 비활성화하지 못했습니다.');
+            toast(message);
+          } finally {
+            if (elements.deactConfirm) elements.deactConfirm.checked = false;
+            if (elements.deactDo) elements.deactDo.disabled = true;
+          }
+        });
+
+        if (elements.delDo) elements.delDo.disabled = true;
+        elements.delConfirm?.addEventListener('input', () => {
+          if (!elements.delDo) return;
+          const expected = state.profile?.handle || '';
+          elements.delDo.disabled = elements.delConfirm.value.trim() !== expected;
+        });
+        elements.delDo?.addEventListener('click', async () => {
+          if (!elements.delConfirm || !elements.delDo) return;
+          const expected = state.profile?.handle || '';
+          if (elements.delConfirm.value.trim() !== expected) {
+            toast('확인용 아이디가 일치하지 않습니다.');
+            return;
+          }
+          const reason = elements.delReason?.value || '';
+          const detail = elements.delDetail?.value || '';
+          elements.delDo.disabled = true;
+          try {
+            await fetchJSON('/api/account', {
+              method: 'DELETE',
+              body: {
+                reason,
+                detail,
+                confirm: expected,
+              },
+            });
+            toast('계정이 삭제되었습니다.');
+            if (elements.delReason) elements.delReason.value = '';
+            if (elements.delDetail) elements.delDetail.value = '';
+            if (elements.delConfirm) elements.delConfirm.value = '';
+            if (window.LoomaSelect && typeof window.LoomaSelect.set === 'function') {
+              window.LoomaSelect.set('delReason', '');
+            }
+            closeModal('#modal-delete');
+            setTimeout(() => { location.href = 'auth.html'; }, 600);
+          } catch (err) {
+            if (err?.status === 401) {
+              location.href = 'auth.html';
+              return;
+            }
+            const message = err?.data?.message || (err?.data?.error === 'confirm-mismatch'
+              ? '확인용 아이디가 일치하지 않습니다.'
+              : err?.data?.error === 'account-suspended'
+              ? '정지된 계정은 여기에서 삭제할 수 없습니다.'
+              : '계정을 삭제하지 못했습니다.');
+            toast(message);
+          } finally {
+            if (elements.delDo) elements.delDo.disabled = true;
+          }
+        });
+      }
+
+      function bindGlobalEvents() {
+        elements.btnLogout?.addEventListener('click', async () => {
+          if (!confirm('로그아웃하시겠습니까?')) return;
+          try {
+            await fetchJSON('/api/logout', { method: 'POST', body: {} });
+          } catch (error) {
+            console.error(error);
+          }
+          location.href = 'auth.html';
+        });
+        elements.adminPanelCard?.addEventListener('click', () => {
+          location.href = 'superadmin.html';
+        });
+        elements.adminPanelCard?.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            location.href = 'superadmin.html';
+          }
+        });
+      }
+
+      async function init() {
+        if (window.LoomaSelect && typeof window.LoomaSelect.scan === 'function') {
+          window.LoomaSelect.scan();
+        }
+        bindAccordions();
+        bindModals();
+        bindProfileEvents();
+        bindAccountEvents();
+        bindTheme();
+        bindHelp();
+        bindAccountActions();
+        bindGlobalEvents();
+
+        const ok = await loadSession();
+        if (!ok) return;
+        await loadProfile();
+      }
+
+      init();
+    })();
+  </script>
+
+
+</body>
+</html>

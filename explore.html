@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="ko" data-theme="auto">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Looma — Explore</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Peta:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet"/>
+
+  <!-- PWA feel -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0A0A0A">
+  <script>
+    (function(){
+      try{
+        var root = document.documentElement;
+        var theme = localStorage.getItem('looma:theme');
+        if(theme !== 'light' && theme !== 'dark'){ theme = 'auto'; }
+        if(theme === 'auto'){ root.removeAttribute('data-theme'); }
+        else{ root.setAttribute('data-theme', theme); }
+        root.dataset.themePreference = theme;
+      }catch(err){
+        /* ignore */
+      }
+    })();
+  </script>
+  <script src="theme.js"></script>
+  <script src="notify-badge.js" defer></script>
+
+  <style>
+    :root{
+      --bg:#0A0A0A; --surface:#111213; --elev:#151618; --line:#1E2023;
+      --text:#EDEFF2; --muted:#9AA3AE; --brand:#0EA5E9;
+      --radius:12px; --shadow:0 6px 16px rgba(0,0,0,.16); --speed:.18s;
+      --dock-h:64px; --footer-h:44px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+        --text:#0B1220; --muted:#596174; --brand:#0077FF;
+        --shadow:0 10px 20px rgba(10,16,30,.06);
+      }
+    }
+    *{ box-sizing:border-box }
+    html, body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    a{ color:inherit; text-decoration:none }
+    button{ font:inherit; background:none; border:0; color:inherit; cursor:pointer }
+    input{
+      color:inherit; background:transparent; border:1px solid var(--line);
+      border-radius:10px; padding:10px 12px;
+    }
+
+    .notif-link{ position:relative; display:inline-flex; }
+    .notif-nav{ position:relative; }
+    .notif-badge{
+      position:absolute;
+      top:-4px;
+      right:-4px;
+      min-width:16px;
+      height:16px;
+      padding:0 4px;
+      border-radius:999px;
+      background:#ef4444;
+      color:#fff;
+      font-size:10px;
+      font-weight:700;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .notif-badge.hidden{ display:none !important; }
+
+    .app{ min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
+
+    /* ===== View Transitions ===== */
+    @keyframes slideInDesktop{ from{ transform:translateX(8%); opacity:.92 } to{ transform:none; opacity:1 } }
+    @keyframes slideOutDesktop{ from{ transform:none; opacity:1 } to{ transform:translateX(-8%); opacity:.92 } }
+    @keyframes slideInMobile{ from{ transform:translateY(6%); opacity:.92 } to{ transform:none; opacity:1 } }
+    @keyframes slideOutMobile{ from{ transform:none; opacity:1 } to{ transform:translateY(-6%); opacity:.92 } }
+    @media (min-width:1024px){
+      ::view-transition-old(root){ animation: slideOutDesktop .24s ease both }
+      ::view-transition-new(root){ animation: slideInDesktop .24s ease both }
+    }
+    @media (max-width:1023.98px){
+      ::view-transition-old(root){ animation: slideOutMobile .24s ease both }
+      ::view-transition-new(root){ animation: slideInMobile .24s ease both }
+    }
+
+    /* ===== Mobile TopBar (home 동일) ===== */
+    .m-top{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-bottom:1px solid var(--line); background:var(--surface);
+      position:sticky; top:0; z-index:20;
+    }
+    .m-left{ display:flex; align-items:center; gap:10px }
+    .m-center{ position:absolute; left:50%; transform:translateX(-50%); pointer-events:none }
+    .m-right{ display:flex; align-items:center; gap:8px }
+    .brand{ font-family:"Lexend Peta"; font-weight:800; letter-spacing:.4px; color:var(--text) }
+    .avatar{
+      width:28px; height:28px; aspect-ratio:1/1; border-radius:50%; background:#D1D5DB;
+      display:flex; align-items:center; justify-content:center;
+      background-position:center; background-size:cover; background-repeat:no-repeat;
+      font-weight:700; font-size:12px; color:#fff; text-transform:uppercase;
+    }
+    .icon-btn{
+      width:32px; height:32px; border-radius:50%; border:1px solid var(--line); background:var(--elev);
+      display:inline-flex; align-items:center; justify-content:center; transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .icon-btn i{ font-size:16px; line-height:1; }
+    .icon-btn:hover{ background:var(--brand); border-color:transparent; color:#fff; transform:translateY(-1px) }
+    @media (min-width:1024px){ .m-top{ display:none } }
+
+    /* ===== Main Grid (home 동일) ===== */
+    .main{ display:grid; gap:16px; grid-template-columns:1fr; padding:16px }
+    @media (min-width:1024px){ .main{ grid-template-columns:260px 1fr 320px; padding-bottom:calc(var(--footer-h) + 8px) } }
+    .container{ max-width:unset; width:100%; margin:0 auto }
+
+    /* ===== Sidebar (home 그대로) ===== */
+    .sidebar{ display:none }
+    @media (min-width:1024px){
+      .sidebar{
+        display:flex; flex-direction:column; gap:14px;
+        border-right:1px solid var(--line); padding:20px 12px 20px 0;
+      }
+      .side-head{ padding:0 8px }
+      .side-brand{ font-family:"Lexend Peta"; font-weight:800; font-size:18px }
+      .me-card{
+        display:flex; align-items:center; gap:10px; padding:10px;
+        border:1px solid var(--line); border-radius:12px; background:var(--surface);
+        background-image: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.03));
+      }
+      .me-card .name{ font-weight:600 } .me-card .id{ color:var(--muted); font-size:12px }
+
+      .nav{ display:flex; flex-direction:column; gap:6px; margin-top:4px }
+      .nav a{
+        display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+        border:1px solid transparent; transition: background var(--speed), border-color var(--speed);
+      }
+      .nav a:hover{ background:var(--elev); border-color:var(--line) }
+      .nav a.active{ background:var(--elev); border-color:var(--line) }
+      .nav .icon{ font-size:18px } .nav .label{ font-weight:600 }
+    }
+
+    /* ===== Right rail (hint/탐색 팁) ===== */
+    .rrail{ display:none }
+    @media (min-width:1024px){
+      .rrail{ display:flex; flex-direction:column; gap:12px; padding-left:12px }
+      .card{ border:1px solid var(--line); border-radius:12px; background:var(--surface) }
+      .card .head{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between }
+      .card .body{ padding:12px 14px }
+      .chip{ font-size:12px; color:var(--muted); padding:2px 8px; border:1px solid var(--line); border-radius:999px }
+      .list-row{ display:flex; align-items:center; gap:10px; padding:8px 0 }
+    }
+
+    /* ===== Mobile Dock (home 그대로) ===== */
+    .dock{ display:none }
+    @media (max-width:1023.98px){
+      .dock{
+        display:block;
+        position:fixed; left:0; right:0; bottom:0;
+        z-index:60;
+        height:var(--dock-h);
+        padding-bottom:var(--safe-bottom);
+        border-top:1px solid var(--line);
+        background:rgba(10,11,14,.92);
+        color:var(--muted);
+        box-shadow:0 -10px 26px rgba(0,0,0,.35);
+        backdrop-filter:blur(18px) saturate(160%);
+        -webkit-backdrop-filter:blur(18px) saturate(160%);
+        transform:translateZ(0);
+        transition:transform var(--speed), background var(--speed), border-color var(--speed);
+      }
+      :root[data-theme="light"] .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+      .with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+      .dock .row{
+        height:var(--dock-h);
+        display:flex;
+        justify-content:space-around;
+        align-items:center;
+        padding:0 12px;
+        gap:4px;
+      }
+      .dock a{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:4px;
+        padding:8px 12px;
+        min-width:56px;
+        border-radius:14px;
+        color:inherit;
+        transition: background var(--speed), color var(--speed), transform var(--speed);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .dock a:active{ transform:scale(.97); }
+      .dock a.active,
+      .dock a:hover{
+        background:var(--elev);
+        transform:translateY(-1px);
+        color:var(--text);
+      }
+      .dock .label{ font-size:11px; color:inherit }
+    }
+    @media (max-width:1023.98px) and (prefers-color-scheme: light){
+      :root:not([data-theme="dark"]) .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+    }
+
+    /* ===== Footer (home 그대로) ===== */
+    .footer{
+      position:fixed; left:0; right:0; bottom:0; height:var(--footer-h);
+      border-top:1px solid var(--line); background:var(--surface); color:#9AA3AE;
+      z-index:50;
+    }
+    .footer .row{
+      max-width:1920px; margin:0 auto; height:100%;
+      padding:0 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    @media (max-width:1023.98px){ .footer{ display:none } }
+
+    /* ===== Explore center ===== */
+    .explore-root.with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+
+    .searchbar{
+      position:sticky; top:0; z-index:10; background:var(--surface);
+      border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;
+    }
+    .s-row{ display:flex; gap:8px; align-items:center }
+    .s-row input{ flex:1 }
+    .tabs{ display:flex; gap:6px; margin-top:10px; flex-wrap:wrap }
+    .tab{ padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:var(--elev); font-weight:700; font-size:12px }
+    .tab.active{ background:var(--brand); border-color:transparent; color:#fff }
+
+    .grid{
+      display:grid; gap:12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width:1024px){
+      .grid{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .card{ border:1px solid var(--line); border-radius:12px; background:var(--surface); overflow:hidden }
+    .card .head{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between }
+    .card .body{ padding:12px 14px }
+    .muted{ color:var(--muted) }
+
+    /* 트렌드 */
+    .trend-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line) }
+    .trend-row:last-child{ border-bottom:0 }
+    .rank{ width:28px; text-align:right; font-weight:800; color:#9AA3AE }
+    .tinfo{ flex:1; min-width:0 }
+    .tname{ font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .tmeta{ font-size:12px; color:var(--muted) }
+    .trend-row .go{ padding:6px 8px; border-radius:8px; border:1px solid var(--line); background:var(--elev) }
+
+    /* 추천 사용자 */
+    .user-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line) }
+    .user-row:last-child{ border-bottom:0 }
+    .ava{ width:36px; height:36px; border-radius:50%; background:#D1D5DB; display:grid; place-items:center; font-weight:800 }
+    .uname{ font-weight:800 }
+    .uhandle{ color:var(--muted); font-size:12px }
+    .uacts{ margin-left:auto; display:flex; gap:6px; align-items:center }
+    .btn{ padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:var(--elev); color:var(--text); font-weight:700 }
+    .btn.primary{ background:var(--brand); border-color:transparent; color:#fff }
+    .icon-btn.small{ width:28px; height:28px }
+
+    /* 결과 리스트 */
+    .res-group{ border:1px solid var(--line); border-radius:12px; background:var(--surface) }
+    .res-head{ padding:10px 12px; border-bottom:1px solid var(--line); font-weight:800 }
+    .res-body{ padding:8px 12px }
+    .res-item{ display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--line) }
+    .res-item:last-child{ border-bottom:0 }
+    .res-item .mini{ width:32px; height:32px; border-radius:8px; background:#D1D5DB; display:grid; place-items:center; font-weight:800 }
+    .res-item .title{ font-weight:800 }
+    .res-item .meta{ font-size:12px; color:var(--muted) }
+    .hash{ padding:4px 8px; border:1px solid var(--line); border-radius:999px; background:var(--elev); font-weight:700; font-size:12px }
+
+    .toast-root{ position:fixed; right:12px; bottom:calc(var(--footer-h) + 12px); z-index:140 }
+    .toast{ pointer-events:none }
+
+    .hidden{ display:none !important }
+
+    /* Active tab helper */
+    .nav a[data-tab="explore"].active,
+    .dock a[data-tab="explore"].active{ background:var(--elev) }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- ===== Mobile Top ===== -->
+    <div class="m-top" role="navigation" aria-label="상단 바(모바일)">
+      <div class="m-left"><div class="avatar" id="mAvatar" title="내 프로필"></div></div>
+      <div class="m-center"><div class="brand" aria-label="LOOMA 로고">LOOMA</div></div>
+      <div class="m-right">
+        <a href="notifications.html" aria-label="알림" data-nav class="notif-link"><i class="ri-notification-3-line"></i><span class="notif-badge hidden" data-notif-count></span></a>
+      </div>
+    </div>
+
+    <main class="main">
+      <!-- ===== Sidebar (home 그대로) ===== -->
+      <aside class="sidebar" aria-label="사이드바 내비게이션">
+        <div class="side-head"><div class="side-brand">LOOMA</div></div>
+
+        <div class="me-card hidden" title="내 계정" id="sidebarSigned">
+          <div class="avatar"></div>
+          <div>
+            <div class="name" id="sidebarName">회원명</div>
+            <div class="id" id="sidebarHandle">@handle</div>
+          </div>
+          <button class="icon-btn" id="btnLogout" aria-label="로그아웃" title="로그아웃"><i class="ri-logout-circle-line"></i></button>
+        </div>
+        <div class="me-card" id="sidebarGuest">
+          <div>
+            <div class="name">Guest</div>
+            <div class="id muted" style="font-size:12px">로그인하고 더 많은 기능을 이용하세요</div>
+          </div>
+          <button class="icon-btn" data-go="login" aria-label="로그인" title="로그인"><i class="ri-login-circle-line"></i></button>
+        </div>
+
+        <nav class="nav" id="sideNav">
+          <a href="home.html" data-nav data-tab="home"><i class="ri-home-5-line icon"></i><span class="label">홈</span></a>
+          <a href="explore.html" data-nav data-tab="explore" class="active"><i class="ri-compass-3-line icon"></i><span class="label">탐색</span></a>
+          <a href="notifications.html" data-nav data-tab="noti" class="notif-nav"><i class="ri-notification-3-line icon"></i><span class="label">알림</span><span class="notif-badge hidden" data-notif-count></span></a>
+          <a href="messages.html" data-nav data-tab="messages"><i class="ri-chat-3-line icon"></i><span class="label">메시지</span></a>
+          <a href="profile.html" data-nav data-tab="profile"><i class="ri-user-3-line icon"></i><span class="label">프로필</span></a>
+          <a href="settings.html" data-nav data-tab="settings"><i class="ri-settings-3-line icon"></i><span class="label">설정</span></a>
+        </nav>
+      </aside>
+
+      <!-- ===== Center: Explore ===== -->
+      <section class="container explore-root with-dock-pad">
+        <!-- 통합 검색 -->
+        <div class="searchbar" role="search">
+          <div class="s-row">
+            <i class="ri-search-line" aria-hidden="true"></i>
+            <input id="q" type="search" placeholder="사람, 게시물, 해시태그를 검색해 보세요 (#해시태그 지원)"/>
+            <button class="icon-btn" id="btnClear" title="지우기"><i class="ri-close-line"></i></button>
+          </div>
+          <div class="tabs" role="tablist" aria-label="검색 범위">
+            <button class="tab active" data-scope="all" aria-selected="true">통합</button>
+            <button class="tab" data-scope="users">사용자</button>
+            <button class="tab" data-scope="posts">게시물</button>
+            <button class="tab" data-scope="tags">해시태그</button>
+          </div>
+        </div>
+
+        <!-- 그리드: 트렌드 / 추천 사용자 -->
+        <div class="grid">
+          <div class="card">
+            <div class="head"><strong>인기 검색어</strong><span class="muted">지금 뜨는 키워드</span></div>
+            <div class="body" id="trendBody"></div>
+          </div>
+
+          <div class="card">
+            <div class="head"><strong>추천 사용자</strong><span class="muted">팔로우로 소식을 받아보세요</span></div>
+            <div class="body" id="suggBody"></div>
+          </div>
+        </div>
+
+        <!-- 검색 결과 -->
+        <div id="results" style="margin-top:12px"></div>
+      </section>
+
+      <!-- ===== Right rail ===== -->
+      <aside class="rrail" aria-label="오른쪽 영역">
+        <div class="card">
+          <div class="head"><strong>탐색 팁</strong></div>
+          <div class="body">
+            <div class="list-row">
+              <i class="ri-hashtag"></i>
+              <span>해시태그로 관심 주제를 빠르게 찾아보세요.</span>
+            </div>
+            <div class="list-row">
+              <i class="ri-user-add-line"></i>
+              <span>추천 사용자를 팔로우하면 홈에서 소식을 받을 수 있어요.</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head"><strong>도움말</strong></div>
+          <div class="body">
+            <div class="list-row">
+              <span class="chip">Tip</span>
+              <span>최근 검색어는 프로필 설정에서 삭제할 수 있어요.</span>
+            </div>
+            <div class="list-row">
+              <span class="chip">공지</span>
+              <span>곧 카테고리별 추천 피드를 제공할 예정입니다.</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer" role="contentinfo">
+      <div class="row">
+        <div>© 2025 LOOMA. All rights reserved.</div>
+        <div style="display:flex; gap:12px">
+          <a class="muted" href="terms.html" data-nav>이용 약관</a>
+          <a class="muted" href="privacy.html" data-nav>개인정보 처리방침</a>
+          <a class="muted" href="https://luminarylabs.netlify.app" target="_blank" rel="noopener noreferrer">Luminary Labs 소개</a>
+        </div>
+      </div>
+    </footer>
+
+    <nav class="dock" role="navigation" aria-label="하단 메뉴(모바일)">
+      <div class="row" id="dockNav">
+        <a href="home.html" data-nav data-tab="home"><i class="ri-home-5-line"></i><span class="label">홈</span></a>
+        <a href="explore.html" data-nav data-tab="explore" class="active"><i class="ri-compass-3-line"></i><span class="label">탐색</span></a>
+        <a href="messages.html" data-nav data-tab="messages"><i class="ri-chat-3-line"></i><span class="label">메시지</span></a>
+        <a href="profile.html" data-nav data-tab="profile"><i class="ri-user-3-line"></i><span class="label">프로필</span></a>
+        <a href="settings.html" data-nav data-tab="settings"><i class="ri-settings-3-line"></i><span class="label">설정</span></a>
+      </div>
+    </nav>
+  </div>
+
+  <div id="toastRoot" class="toast-root"></div>
+
+  <script>
+    (() => {
+      const $ = (selector, scope = document) => scope.querySelector(selector);
+      const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
+
+      document.querySelectorAll("a[data-nav]").forEach((a) => {
+        const href = a.getAttribute("href") || "";
+        a.addEventListener("click", (event) => {
+          if (!href || href.startsWith("#") || href.startsWith("http")) return;
+          event.preventDefault();
+          if (document.startViewTransition) {
+            document.startViewTransition(() => { location.href = href; });
+          } else {
+            document.body.style.opacity = "0";
+            setTimeout(() => { location.href = href; }, 140);
+          }
+        });
+      });
+      document.querySelectorAll(".nav a[data-tab], .dock a[data-tab]").forEach((a) => {
+        a.classList.toggle("active", a.dataset.tab === "explore");
+      });
+
+      const elements = {
+        q: $("#q"),
+        btnClear: $("#btnClear"),
+        tabs: $$(".tab"),
+        trendBody: $("#trendBody"),
+        suggBody: $("#suggBody"),
+        results: $("#results"),
+        toastRoot: $("#toastRoot"),
+        sidebarSigned: $("#sidebarSigned"),
+        sidebarGuest: $("#sidebarGuest"),
+        sidebarName: $("#sidebarName"),
+        sidebarHandle: $("#sidebarHandle"),
+        sidebarAvatar: $("#sidebarSigned .avatar"),
+        btnLogout: $("#btnLogout"),
+        mAvatar: $("#mAvatar"),
+      };
+
+      const state = {
+        viewer: null,
+        summary: {
+          trending: [],
+          suggestedUsers: [],
+        },
+        search: {
+          query: "",
+          scope: "all",
+          loading: false,
+          error: "",
+          results: null,
+        },
+      };
+
+      function fetchJSON(path, { method = "GET", body, headers } = {}) {
+        const options = {
+          method,
+          credentials: "include",
+          headers: {
+            ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+            ...(headers || {}),
+          },
+        };
+        if (body !== undefined) {
+          options.body = typeof body === "string" ? body : JSON.stringify(body);
+        }
+        return fetch(path, options).then(async (res) => {
+          const contentType = res.headers.get("content-type") || "";
+          const payload = contentType.includes("application/json")
+            ? await res.json().catch(() => null)
+            : await res.text().catch(() => null);
+          if (!res.ok) {
+            const err = new Error("Request failed");
+            err.status = res.status;
+            err.data = payload;
+            throw err;
+          }
+          return payload;
+        });
+      }
+
+      function showToast(message) {
+        if (!elements.toastRoot) return;
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.style.cssText =
+          "margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);opacity:0;transform:translateY(6px);transition:.2s;";
+        toast.textContent = message;
+        elements.toastRoot.appendChild(toast);
+        requestAnimationFrame(() => {
+          toast.style.opacity = "1";
+          toast.style.transform = "none";
+        });
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateY(6px)";
+          setTimeout(() => toast.remove(), 200);
+        }, 2200);
+      }
+
+      function applyAvatar(element, url, fallbackLabel = "") {
+        if (!element) return;
+        if (url) {
+          const safe = String(url).replace(/"/g, "%22").replace(/'/g, "%27");
+          element.style.backgroundImage = `url("${safe}")`;
+          element.style.backgroundSize = "cover";
+          element.style.backgroundPosition = "center";
+          element.textContent = "";
+        } else {
+          element.style.backgroundImage = "";
+          const label = String(fallbackLabel || "").replace(/^@/, "").trim();
+          element.textContent = label ? label.charAt(0).toUpperCase() : "";
+        }
+      }
+
+      function applyViewer(viewer) {
+        state.viewer = viewer || null;
+        if (viewer) {
+          elements.sidebarSigned?.classList.remove("hidden");
+          elements.sidebarGuest?.classList.add("hidden");
+          if (elements.sidebarName) elements.sidebarName.textContent = viewer.name || viewer.handle || "회원";
+          if (elements.sidebarHandle) elements.sidebarHandle.textContent = viewer.handle || "";
+        } else {
+          elements.sidebarSigned?.classList.add("hidden");
+          elements.sidebarGuest?.classList.remove("hidden");
+          if (elements.sidebarName) elements.sidebarName.textContent = "회원명";
+          if (elements.sidebarHandle) elements.sidebarHandle.textContent = "@handle";
+        }
+        const fallback = viewer?.name || viewer?.handle || "U";
+        applyAvatar(elements.sidebarAvatar, viewer?.avatarUrl || null, fallback);
+        applyAvatar(elements.mAvatar, viewer?.avatarUrl || null, fallback);
+      }
+
+      function formatNumber(value) {
+        return new Intl.NumberFormat("ko").format(value || 0);
+      }
+
+      function formatTime(iso) {
+        if (!iso) return "";
+        const date = new Date(iso);
+        if (Number.isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat("ko", { dateStyle: "medium", timeStyle: "short" }).format(date);
+      }
+
+      function setScope(scope) {
+        state.search.scope = scope;
+        elements.tabs.forEach((tab) => {
+          tab.classList.toggle("active", tab.dataset.scope === scope);
+          if (tab.dataset.scope === scope) {
+            tab.setAttribute("aria-selected", "true");
+          } else {
+            tab.setAttribute("aria-selected", "false");
+          }
+        });
+      }
+
+      function renderTrends() {
+        if (!elements.trendBody) return;
+        elements.trendBody.innerHTML = "";
+        const list = state.summary.trending || [];
+        if (!list.length) {
+          const empty = document.createElement("p");
+          empty.className = "muted";
+          empty.style.margin = "8px 0";
+          empty.textContent = "인기 검색어가 아직 없습니다.";
+          elements.trendBody.appendChild(empty);
+          return;
+        }
+        list.slice(0, 10).forEach((item, index) => {
+          const row = document.createElement("div");
+          row.className = "trend-row";
+          const rank = document.createElement("div");
+          rank.className = "rank";
+          rank.textContent = String(index + 1).padStart(2, "0");
+          const info = document.createElement("div");
+          info.className = "tinfo";
+          const name = document.createElement("div");
+          name.className = "tname";
+          name.textContent = item?.tag || "#";
+          const meta = document.createElement("div");
+          meta.className = "tmeta";
+          meta.textContent = `${formatNumber(item?.count || 0)}개 게시물`;
+          info.appendChild(name);
+          info.appendChild(meta);
+          const button = document.createElement("button");
+          button.className = "go";
+          button.type = "button";
+          button.dataset.fill = item?.tag || "";
+          button.innerHTML = "<i class=\"ri-search-line\"></i>";
+          row.appendChild(rank);
+          row.appendChild(info);
+          row.appendChild(button);
+          elements.trendBody.appendChild(row);
+        });
+      }
+
+      function createFollowButton(user) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `btn ${user?.isFollowing ? "" : "primary"}`;
+        btn.dataset.followHandle = user?.handle || "";
+        btn.dataset.following = user?.isFollowing ? "true" : "false";
+        if (user?.isSelf) {
+          btn.disabled = true;
+          btn.textContent = "나";
+          btn.classList.remove("primary");
+        } else {
+          btn.textContent = user?.isFollowing ? "팔로잉" : "팔로우";
+        }
+        return btn;
+      }
+
+      function renderSuggestions() {
+        if (!elements.suggBody) return;
+        elements.suggBody.innerHTML = "";
+        const list = state.summary.suggestedUsers || [];
+        if (!list.length) {
+          const empty = document.createElement("p");
+          empty.className = "muted";
+          empty.style.margin = "6px 0";
+          empty.textContent = "추천할 사용자가 없습니다.";
+          elements.suggBody.appendChild(empty);
+          return;
+        }
+        list.forEach((user) => {
+          const row = document.createElement("div");
+          row.className = "user-row";
+          row.dataset.userHandle = user.handle || "";
+          const avatar = document.createElement("div");
+          avatar.className = "ava";
+          applyAvatar(avatar, user?.avatarUrl || null, user?.handle || user?.name || "");
+          const info = document.createElement("div");
+          const name = document.createElement("div");
+          name.className = "uname";
+          name.textContent = user?.name || user?.handle || "사용자";
+          const handle = document.createElement("div");
+          handle.className = "uhandle";
+          handle.textContent = user?.handle || "";
+          info.appendChild(name);
+          info.appendChild(handle);
+          const actions = document.createElement("div");
+          actions.className = "uacts";
+          const followBtn = createFollowButton(user);
+          actions.appendChild(followBtn);
+          const dmBtn = document.createElement("button");
+          dmBtn.type = "button";
+          dmBtn.className = "icon-btn small";
+          dmBtn.dataset.dm = user?.handle || "";
+          dmBtn.title = "메시지";
+          dmBtn.innerHTML = "<i class=\"ri-message-3-line\"></i>";
+          actions.appendChild(dmBtn);
+          const profileLink = document.createElement("a");
+          profileLink.className = "icon-btn small";
+          profileLink.href = user?.handle
+            ? `profile.html?handle=${encodeURIComponent(user.handle.replace(/^@/, ""))}`
+            : "profile.html";
+          profileLink.setAttribute("data-nav", "");
+          profileLink.title = "프로필";
+          profileLink.innerHTML = "<i class=\"ri-user-3-line\"></i>";
+          actions.appendChild(profileLink);
+          row.appendChild(avatar);
+          row.appendChild(info);
+          row.appendChild(actions);
+          elements.suggBody.appendChild(row);
+        });
+      }
+
+      function renderUserResults(users) {
+        const group = document.createElement("div");
+        group.className = "res-group";
+        const header = document.createElement("div");
+        header.className = "res-head";
+        header.textContent = "사용자";
+        const body = document.createElement("div");
+        body.className = "res-body";
+        users.forEach((user) => {
+          const row = document.createElement("div");
+          row.className = "res-item";
+          row.dataset.userHandle = user.handle || "";
+          const avatar = document.createElement("div");
+          avatar.className = "mini";
+          applyAvatar(avatar, user?.avatarUrl || null, user?.handle || user?.name || "");
+          const content = document.createElement("div");
+          content.style.minWidth = "0";
+          const title = document.createElement("div");
+          title.className = "title";
+          const name = document.createElement("span");
+          name.textContent = user?.name || user?.handle || "사용자";
+          title.appendChild(name);
+          if (user?.handle) {
+            const meta = document.createElement("span");
+            meta.className = "meta";
+            meta.textContent = ` ${user.handle}`;
+            title.appendChild(meta);
+          }
+          content.appendChild(title);
+          const actions = document.createElement("div");
+          actions.className = "uacts";
+          const followBtn = createFollowButton(user);
+          actions.appendChild(followBtn);
+          const dmBtn = document.createElement("button");
+          dmBtn.type = "button";
+          dmBtn.className = "icon-btn small";
+          dmBtn.dataset.dm = user?.handle || "";
+          dmBtn.title = "메시지";
+          dmBtn.innerHTML = "<i class=\"ri-message-3-line\"></i>";
+          actions.appendChild(dmBtn);
+          const profileLink = document.createElement("a");
+          profileLink.className = "icon-btn small";
+          profileLink.href = user?.handle
+            ? `profile.html?handle=${encodeURIComponent(user.handle.replace(/^@/, ""))}`
+            : "profile.html";
+          profileLink.setAttribute("data-nav", "");
+          profileLink.title = "프로필";
+          profileLink.innerHTML = "<i class=\"ri-user-3-line\"></i>";
+          actions.appendChild(profileLink);
+          row.appendChild(avatar);
+          row.appendChild(content);
+          row.appendChild(actions);
+          body.appendChild(row);
+        });
+        group.appendChild(header);
+        group.appendChild(body);
+        return group;
+      }
+
+      function renderPostResults(posts) {
+        const group = document.createElement("div");
+        group.className = "res-group";
+        group.style.marginTop = "12px";
+        const header = document.createElement("div");
+        header.className = "res-head";
+        header.textContent = "게시물";
+        const body = document.createElement("div");
+        body.className = "res-body";
+        posts.forEach((post) => {
+          const row = document.createElement("div");
+          row.className = "res-item";
+          const avatar = document.createElement("div");
+          avatar.className = "mini";
+          applyAvatar(avatar, post?.author?.avatarUrl || null, post?.author?.handle || post?.author?.name || "P");
+          const content = document.createElement("div");
+          content.style.minWidth = "0";
+          const title = document.createElement("div");
+          title.className = "title";
+          const name = document.createElement("span");
+          name.textContent = post?.author?.name || "사용자";
+          title.appendChild(name);
+          if (post?.author?.handle) {
+            const handle = document.createElement("span");
+            handle.className = "meta";
+            handle.textContent = ` ${post.author.handle}`;
+            title.appendChild(handle);
+          }
+          if (post?.createdAt) {
+            const timeMeta = document.createElement("span");
+            timeMeta.className = "meta";
+            timeMeta.textContent = ` · ${formatTime(post.createdAt)}`;
+            title.appendChild(timeMeta);
+          }
+          content.appendChild(title);
+          if (post?.text) {
+            const textEl = document.createElement("div");
+            textEl.className = "body";
+            textEl.style.marginTop = "2px";
+            textEl.textContent = post.text;
+            content.appendChild(textEl);
+          }
+          if (Array.isArray(post?.tags) && post.tags.length) {
+            const tagWrap = document.createElement("div");
+            tagWrap.style.marginTop = "6px";
+            post.tags.slice(0, 4).forEach((tag) => {
+              const chip = document.createElement("span");
+              chip.className = "hash";
+              chip.dataset.fill = tag;
+              chip.textContent = tag;
+              tagWrap.appendChild(chip);
+            });
+            content.appendChild(tagWrap);
+          }
+          const actions = document.createElement("div");
+          actions.className = "uacts";
+          const dmBtn = document.createElement("button");
+          dmBtn.type = "button";
+          dmBtn.className = "icon-btn small";
+          dmBtn.dataset.dm = post?.author?.handle || "";
+          dmBtn.title = "메시지";
+          dmBtn.innerHTML = "<i class=\"ri-message-3-line\"></i>";
+          actions.appendChild(dmBtn);
+          row.appendChild(avatar);
+          row.appendChild(content);
+          row.appendChild(actions);
+          body.appendChild(row);
+        });
+        group.appendChild(header);
+        group.appendChild(body);
+        return group;
+      }
+
+      function renderTagResults(tags) {
+        const group = document.createElement("div");
+        group.className = "res-group";
+        group.style.marginTop = "12px";
+        const header = document.createElement("div");
+        header.className = "res-head";
+        header.textContent = "해시태그";
+        const body = document.createElement("div");
+        body.className = "res-body";
+        tags.forEach((tag) => {
+          const row = document.createElement("div");
+          row.className = "res-item";
+          const mini = document.createElement("div");
+          mini.className = "mini";
+          mini.textContent = "#";
+          const title = document.createElement("div");
+          title.className = "title";
+          title.style.flex = "1";
+          title.textContent = tag?.tag || "#";
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "hash";
+          button.dataset.fill = tag?.tag || "";
+          button.textContent = `${formatNumber(tag?.count || 0)}개`;
+          row.appendChild(mini);
+          row.appendChild(title);
+          row.appendChild(button);
+          body.appendChild(row);
+        });
+        group.appendChild(header);
+        group.appendChild(body);
+        return group;
+      }
+
+      function renderResults() {
+        if (!elements.results) return;
+        const query = state.search.query;
+        elements.results.innerHTML = "";
+        if (!query) return;
+        if (state.search.loading) {
+          const loading = document.createElement("div");
+          loading.className = "muted";
+          loading.style.padding = "12px";
+          loading.textContent = "검색 중입니다...";
+          elements.results.appendChild(loading);
+          return;
+        }
+        if (state.search.error) {
+          const error = document.createElement("div");
+          error.className = "muted";
+          error.style.padding = "12px";
+          error.textContent = state.search.error;
+          elements.results.appendChild(error);
+          return;
+        }
+        const data = state.search.results;
+        if (!data) return;
+        const showUsers = state.search.scope === "all" || state.search.scope === "users";
+        const showPosts = state.search.scope === "all" || state.search.scope === "posts";
+        const showTags = state.search.scope === "all" || state.search.scope === "tags";
+        let hasContent = false;
+        if (showUsers && Array.isArray(data.users) && data.users.length) {
+          elements.results.appendChild(renderUserResults(data.users));
+          hasContent = true;
+        }
+        if (showPosts && Array.isArray(data.posts) && data.posts.length) {
+          elements.results.appendChild(renderPostResults(data.posts));
+          hasContent = true;
+        }
+        if (showTags && Array.isArray(data.tags) && data.tags.length) {
+          elements.results.appendChild(renderTagResults(data.tags));
+          hasContent = true;
+        }
+        if (!hasContent) {
+          const empty = document.createElement("div");
+          empty.className = "muted";
+          empty.style.padding = "12px";
+          empty.textContent = "검색 결과가 없습니다.";
+          elements.results.appendChild(empty);
+        }
+      }
+
+      function updateFollowState(handle, isFollowing) {
+        if (!handle) return;
+        const normalized = handle.startsWith("@") ? handle : `@${handle}`;
+        state.summary.suggestedUsers = (state.summary.suggestedUsers || []).map((user) =>
+          user.handle === normalized ? { ...user, isFollowing } : user,
+        );
+        if (state.search.results?.users) {
+          state.search.results.users = state.search.results.users.map((user) =>
+            user.handle === normalized ? { ...user, isFollowing } : user,
+          );
+        }
+        renderSuggestions();
+        renderResults();
+      }
+
+      async function handleFollowToggle(handle, currentlyFollowing) {
+        if (!handle) return;
+        if (!state.viewer) {
+          location.href = "auth.html";
+          return;
+        }
+        const method = currentlyFollowing ? "DELETE" : "POST";
+        try {
+          await fetchJSON(`/api/users/${encodeURIComponent(handle)}/follow`, {
+            method,
+            body: method === "POST" ? {} : undefined,
+          });
+          updateFollowState(handle, !currentlyFollowing);
+          showToast(!currentlyFollowing ? "팔로우했습니다." : "팔로우를 취소했습니다.");
+        } catch (err) {
+          if (err?.status === 401) {
+            location.href = "auth.html";
+            return;
+          }
+          if (err?.status === 404) {
+            showToast("대상을 찾을 수 없습니다.");
+            return;
+          }
+          showToast("요청을 처리하지 못했습니다.");
+          console.error("follow toggle error", err);
+        }
+      }
+
+      function openDirectMessage(handle) {
+        if (!handle) return;
+        const clean = handle.replace(/^@/, "");
+        localStorage.setItem("looma:openChannel", "dm:" + clean);
+        if (document.startViewTransition) {
+          document.startViewTransition(() => {
+            location.href = "messages.html";
+          });
+        } else {
+          location.href = "messages.html";
+        }
+      }
+
+      let searchTimer = null;
+      let searchToken = 0;
+
+      function scheduleSearch() {
+        if (!elements.q) return;
+        const value = elements.q.value || "";
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => executeSearch(value), 220);
+      }
+
+      async function executeSearch(value) {
+        const token = ++searchToken;
+        const trimmed = String(value || "").trim();
+        state.search.query = trimmed;
+        if (!trimmed) {
+          state.search.results = null;
+          state.search.error = "";
+          state.search.loading = false;
+          renderResults();
+          return;
+        }
+        state.search.loading = true;
+        state.search.error = "";
+        renderResults();
+        try {
+          const params = new URLSearchParams();
+          params.set("q", trimmed);
+          if (state.search.scope && state.search.scope !== "all") {
+            params.set("scope", state.search.scope);
+          }
+          const res = await fetchJSON(`/api/search?${params.toString()}`);
+          if (token !== searchToken) return;
+          state.search.results = {
+            users: Array.isArray(res?.users) ? res.users : [],
+            posts: Array.isArray(res?.posts) ? res.posts : [],
+            tags: Array.isArray(res?.tags) ? res.tags : [],
+          };
+          state.search.error = "";
+        } catch (err) {
+          if (token !== searchToken) return;
+          state.search.results = null;
+          state.search.error = err?.data?.message || err?.message || "검색에 실패했습니다.";
+          console.error("search error", err);
+        } finally {
+          if (token === searchToken) {
+            state.search.loading = false;
+            renderResults();
+          }
+        }
+      }
+
+      async function logout() {
+        try {
+          await fetchJSON("/api/logout", { method: "POST", body: {} });
+          applyViewer(null);
+          showToast("로그아웃되었습니다.");
+        } catch (err) {
+          console.error("logout error", err);
+          showToast("로그아웃에 실패했습니다.");
+        }
+      }
+
+      function bindEvents() {
+        elements.tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            const scope = tab.dataset.scope || "all";
+            setScope(scope);
+            if (state.search.query) executeSearch(state.search.query);
+          });
+        });
+        elements.q?.addEventListener("input", scheduleSearch);
+        elements.q?.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            executeSearch(elements.q.value);
+          }
+        });
+        elements.btnClear?.addEventListener("click", () => {
+          if (!elements.q) return;
+          elements.q.value = "";
+          state.search.query = "";
+          state.search.results = null;
+          state.search.error = "";
+          renderResults();
+          elements.q.focus();
+        });
+        elements.btnLogout?.addEventListener("click", () => {
+          if (confirm("로그아웃하시겠습니까?")) logout();
+        });
+        document.addEventListener("click", (event) => {
+          const fillTarget = event.target.closest("[data-fill]");
+          if (fillTarget) {
+            const value = fillTarget.getAttribute("data-fill") || "";
+            if (elements.q) {
+              elements.q.value = value;
+              setScope("all");
+              executeSearch(value);
+            }
+            return;
+          }
+          const followTarget = event.target.closest("[data-follow-handle]");
+          if (followTarget) {
+            const handle = followTarget.getAttribute("data-follow-handle");
+            const following = followTarget.getAttribute("data-following") === "true";
+            handleFollowToggle(handle, following);
+            return;
+          }
+          const dmTarget = event.target.closest("[data-dm]");
+          if (dmTarget) {
+            const handle = dmTarget.getAttribute("data-dm");
+            if (!state.viewer) {
+              location.href = "auth.html";
+              return;
+            }
+            openDirectMessage(handle);
+            return;
+          }
+          const goTarget = event.target.closest('[data-go="login"]');
+          if (goTarget) {
+            location.href = "auth.html";
+          }
+        });
+      }
+
+      async function loadSummary() {
+        try {
+          const data = await fetchJSON("/api/explore/summary");
+          if (data?.viewer) applyViewer(data.viewer);
+          if (Array.isArray(data?.trending)) state.summary.trending = data.trending;
+          if (Array.isArray(data?.suggestedUsers)) state.summary.suggestedUsers = data.suggestedUsers;
+        } catch (err) {
+          console.error("summary load error", err);
+          state.summary.trending = [];
+          state.summary.suggestedUsers = [];
+        }
+        renderTrends();
+        renderSuggestions();
+      }
+
+      function initFromQuery() {
+        if (!elements.q) return;
+        const params = new URLSearchParams(location.search);
+        const initial = params.get("q");
+        if (initial) {
+          const decoded = decodeURIComponent(initial);
+          elements.q.value = decoded;
+          executeSearch(decoded);
+        }
+      }
+
+      applyViewer(null);
+      bindEvents();
+      loadSummary();
+      initFromQuery();
+    })();
+  </script>
+</body>
+</html>

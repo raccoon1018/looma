@@ -1,0 +1,1408 @@
+<!doctype html>
+<html lang="ko" data-theme="auto">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Looma — Profile</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Peta:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet"/>
+  <meta name="theme-color" content="#0A0A0A">
+  <script>
+    (function(){
+      try{
+        var root = document.documentElement;
+        var theme = localStorage.getItem('looma:theme');
+        if(theme !== 'light' && theme !== 'dark'){ theme = 'auto'; }
+        if(theme === 'auto'){ root.removeAttribute('data-theme'); }
+        else{ root.setAttribute('data-theme', theme); }
+        root.dataset.themePreference = theme;
+      }catch(err){
+        /* ignore */
+      }
+    })();
+  </script>
+  <script src="theme.js"></script>
+  <script src="notify-badge.js" defer></script>
+
+  <style>
+    :root{
+      --bg:#0A0A0A; --surface:#111213; --elev:#151618; --line:#1E2023;
+      --text:#EDEFF2; --muted:#9AA3AE; --brand:#0EA5E9; --danger:#ef4444;
+      --radius:12px; --shadow:0 6px 16px rgba(0,0,0,.16); --speed:.18s;
+      --dock-h:64px; --footer-h:44px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+        --text:#0B1220; --muted:#596174; --brand:#0077FF; --danger:#dc2626;
+        --shadow:0 10px 20px rgba(10,16,30,.06);
+      }
+    }
+    *{ box-sizing:border-box }
+    html, body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    a{ color:inherit; text-decoration:none }
+    button{ font:inherit; background:none; border:0; color:inherit; cursor:pointer }
+    .hidden{ display:none !important }
+
+    .notif-link{ position:relative; display:inline-flex; }
+    .notif-nav{ position:relative; }
+    .notif-badge{
+      position:absolute;
+      top:-4px;
+      right:-4px;
+      min-width:16px;
+      height:16px;
+      padding:0 4px;
+      border-radius:999px;
+      background:#ef4444;
+      color:#fff;
+      font-size:10px;
+      font-weight:700;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .notif-badge.hidden{ display:none !important; }
+
+    .app{ min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
+
+    @keyframes vtFadeInDesktop{ 0%{ opacity:0; transform:translate3d(36px,0,0) scale(.985); } 100%{ opacity:1; transform:none; } }
+    @keyframes vtFadeOutDesktop{ 0%{ opacity:1; transform:none; } 100%{ opacity:0; transform:translate3d(-28px,0,0) scale(.985); } }
+    @keyframes vtFadeInMobile{ 0%{ opacity:0; transform:translate3d(0,40px,0) scale(.985); } 100%{ opacity:1; transform:none; } }
+    @keyframes vtFadeOutMobile{ 0%{ opacity:1; transform:none; } 100%{ opacity:0; transform:translate3d(0,-32px,0) scale(.985); } }
+    @media (min-width:1024px){
+      ::view-transition-old(root){ animation: vtFadeOutDesktop .36s cubic-bezier(.22,.61,.36,1) both }
+      ::view-transition-new(root){ animation: vtFadeInDesktop .36s cubic-bezier(.16,.84,.44,1) both }
+    }
+    @media (max-width:1023.98px){
+      ::view-transition-old(root){ animation: vtFadeOutMobile .34s cubic-bezier(.25,.8,.25,1) both }
+      ::view-transition-new(root){ animation: vtFadeInMobile .34s cubic-bezier(.16,.84,.44,1) both }
+    }
+    @media (prefers-reduced-motion: reduce){
+      ::view-transition-old(root), ::view-transition-new(root){ animation:none !important }
+    }
+
+    .m-top{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-bottom:1px solid var(--line); background:var(--surface);
+      position:sticky; top:0; z-index:30;
+    }
+    .m-left{ display:flex; align-items:center; gap:10px }
+    .m-center{ position:absolute; left:50%; transform:translateX(-50%); pointer-events:none }
+    .m-right{ display:flex; align-items:center; gap:8px }
+    .brand{ font-family:"Lexend Peta"; font-weight:800; letter-spacing:.4px; color:var(--text) }
+    .avatar{
+      width:32px; height:32px; border-radius:50%; background:#2f3033;
+      background-position:center; background-size:cover; background-repeat:no-repeat;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:13px; color:#fff; text-transform:uppercase;
+    }
+    .icon-btn{
+      width:32px; height:32px; border-radius:50%; border:1px solid var(--line);
+      background:var(--elev); display:inline-flex; align-items:center; justify-content:center;
+      transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .icon-btn:hover{ background:var(--brand); border-color:transparent; color:#fff; transform:translateY(-1px); }
+    @media (min-width:1024px){ .m-top{ display:none } }
+
+    .main{ display:grid; gap:16px; grid-template-columns:1fr; padding:16px }
+    @media (min-width:1024px){
+      .main{ grid-template-columns:260px minmax(0, 1fr) 320px; padding-bottom:calc(var(--footer-h) + 12px) }
+    }
+
+    .sidebar{ display:none }
+    @media (min-width:1024px){
+      .sidebar{
+        display:flex; flex-direction:column; gap:14px;
+        border-right:1px solid var(--line); padding:20px 12px 20px 0;
+      }
+      .side-head{ padding:0 8px }
+      .side-brand{ font-family:"Lexend Peta"; font-weight:800; font-size:18px }
+      .me-card{
+        display:flex; align-items:center; gap:10px; padding:10px;
+        border:1px solid var(--line); border-radius:12px; background:var(--surface);
+        background-image: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.03));
+      }
+      .me-card .name{ font-weight:600 }
+      .me-card .id{ color:var(--muted); font-size:12px }
+      .nav{ display:flex; flex-direction:column; gap:6px; margin-top:4px }
+      .nav a{
+        display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+        border:1px solid transparent; transition: background var(--speed), border-color var(--speed);
+      }
+      .nav a:hover{ background:var(--elev); border-color:var(--line) }
+      .nav a.active{ background:var(--elev); border-color:var(--line) }
+      .nav .icon{ font-size:18px }
+      .nav .label{ font-weight:600 }
+    }
+
+    .profile-root{ display:flex; flex-direction:column; gap:18px }
+    .profile-head{ display:flex; flex-direction:column; gap:6px }
+    .profile-head h1{ margin:0; font-size:22px; font-weight:800 }
+    .profile-head p{ margin:0; color:var(--muted); font-size:13px }
+
+    .profile-guard{
+      border:1px solid var(--line); border-radius:12px; background:var(--surface);
+      padding:32px; text-align:center;
+    }
+
+    .card{
+      border:1px solid var(--line); border-radius:16px; background:var(--surface);
+      padding:24px; box-shadow:var(--shadow);
+    }
+
+    .profile-header{
+      display:flex; flex-direction:column; gap:16px;
+    }
+    .profile-header .top{
+      display:flex; flex-direction:column; gap:16px;
+    }
+    @media (min-width:640px){
+      .profile-header .top{ flex-direction:row; align-items:center; justify-content:space-between }
+    }
+    .profile-avatar-large{
+      width:112px; height:112px; border-radius:50%; background:#1f2226;
+      background-position:center; background-size:cover; background-repeat:no-repeat;
+      border:2px solid rgba(255,255,255,.08);
+    }
+    .profile-info{ display:flex; flex-direction:column; gap:6px }
+    .profile-info strong{ font-size:20px; font-weight:800 }
+    .profile-info .handle{ color:var(--muted); font-weight:600 }
+    .profile-info .joined{ color:var(--muted); font-size:12px }
+    .profile-actions{ display:flex; gap:8px }
+    .btn{
+      border:1px solid var(--line); border-radius:10px; padding:8px 16px;
+      display:inline-flex; align-items:center; gap:6px; background:var(--elev);
+      transition: background var(--speed), border-color var(--speed);
+    }
+    .btn.primary{ background:var(--brand); border-color:transparent; color:#fff }
+    .btn.danger{ background:var(--danger); border-color:transparent; color:#fff }
+    .btn.outline{ background:transparent }
+    .btn:disabled{ opacity:.6; cursor:not-allowed }
+    .btn:hover:not(:disabled){ transform:translateY(-1px) }
+    .btn.danger{ background:var(--danger); border-color:transparent; color:#fff }
+    .post-header-row{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    }
+    .post-menu-btn{
+      width:32px; height:32px; border-radius:50%; border:1px solid var(--line);
+      display:flex; align-items:center; justify-content:center;
+      background:var(--elev); cursor:pointer; transition:background var(--speed), border-color var(--speed);
+    }
+    .post-menu-btn:hover{ background:var(--brand); border-color:transparent; color:#fff }
+    .post-actions{ margin-top:10px; display:flex; justify-content:flex-end }
+    .action-list{ display:flex; flex-direction:column; gap:8px }
+    .action-row{
+      width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+      background:var(--elev); text-align:left; font-weight:600; display:flex; justify-content:space-between;
+    }
+    .action-row.danger{ color:var(--danger) }
+  
+    .profile-stats{
+      display:flex; gap:18px; flex-wrap:wrap; justify-content:flex-start;
+    }
+    .profile-stats .stat{
+      display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center;
+    }
+    .profile-stats button.stat{
+      background:none; border:0; padding:0; cursor:pointer; color:inherit;
+      border-radius:10px; transition: color var(--speed), transform var(--speed);
+    }
+    .profile-stats button.stat:hover{
+      color:var(--brand); transform:translateY(-1px);
+    }
+    .profile-stats button.stat:focus-visible{
+      outline:2px solid var(--brand); outline-offset:4px;
+    }
+    .stat span{ font-size:18px; font-weight:700 }
+    .stat label{ color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.3px }
+
+    .post-list{
+      display:flex; flex-direction:column; gap:12px;
+    }
+    .post-card{
+      border:1px solid var(--line); border-radius:14px; background:var(--surface);
+      padding:18px; display:flex; flex-direction:column; gap:12px;
+    }
+
+    /* Follow modal */
+    .modal{
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.45); z-index:120; padding:18px;
+    }
+    .modal.open{ display:flex }
+    .modal .panel{
+      width:min(460px, 92vw); max-height:90vh; display:flex; flex-direction:column;
+      border:1px solid var(--line); border-radius:16px; background:var(--surface); box-shadow:var(--shadow);
+    }
+    .modal .head{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:16px; border-bottom:1px solid var(--line);
+    }
+    .modal .body{
+      padding:16px; overflow:auto; display:flex; flex-direction:column; gap:12px;
+    }
+    .modal .title{
+      margin:0; font-size:18px; font-weight:800;
+    }
+    .modal .close-btn{
+      width:32px; height:32px; border-radius:50%; border:1px solid var(--line);
+      background:var(--elev); color:inherit; display:inline-flex; align-items:center; justify-content:center;
+    }
+    .modal .close-btn:hover{ background:var(--brand); border-color:transparent; color:#fff }
+    .follow-desc{ margin:0; color:var(--muted); font-size:13px }
+    .follow-list{
+      list-style:none; margin:0; padding:0; display:grid; gap:8px;
+    }
+    .follow-item{
+      width:100%; border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+      background:var(--elev); display:flex; gap:12px; align-items:center; cursor:pointer;
+      text-align:left; color:inherit; transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .follow-item:hover{
+      background:var(--brand); border-color:transparent; color:#fff; transform:translateY(-1px);
+    }
+    .follow-avatar{
+      width:42px; height:42px; border-radius:50%; background:#1f2226;
+      background-position:center; background-size:cover; flex:0 0 auto;
+    }
+    .follow-meta{ display:flex; flex-direction:column; gap:4px; align-items:flex-start }
+    .follow-meta strong{ font-size:15px; font-weight:700 }
+    .follow-sub{ display:flex; align-items:center; gap:8px; font-size:13px }
+    .follow-handle{ color:var(--muted); font-size:13px }
+    .follow-item:hover .follow-handle{ color:rgba(255,255,255,.85) }
+    .follow-badge{
+      font-size:11px; font-weight:600; padding:2px 7px; border-radius:999px;
+      background:rgba(14,165,233,.14); color:var(--brand);
+    }
+    .follow-item:hover .follow-badge{ background:rgba(255,255,255,.24); color:#fff }
+    .follow-empty,
+    .follow-loading,
+    .follow-error{
+      text-align:center; font-size:13px; padding:24px 0; border:1px dashed var(--line); border-radius:12px;
+      color:var(--muted);
+    }
+    .follow-error{ color:#f87171 }
+    .post-header{
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .post-meta{ color:var(--muted); font-size:12px }
+    .post-text{ white-space:pre-line; font-size:14px }
+    .attachments{ display:flex; gap:8px; flex-wrap:wrap }
+    .attachments img{
+      max-width:100%; border-radius:10px; border:1px solid var(--line);
+    }
+    .attachments video{
+      max-width:100%; border-radius:10px; border:1px solid var(--line);
+    }
+
+    .empty-state{
+      border:1px dashed var(--line); border-radius:14px; padding:24px; text-align:center;
+      color:var(--muted);
+    }
+
+    .rrail{ display:none }
+    @media (min-width:1024px){
+      .rrail{ display:flex; flex-direction:column; gap:12px; padding-left:12px }
+      .rrail .card{ box-shadow:none }
+    }
+
+    .footer{
+      position:fixed; left:0; right:0; bottom:0; height:var(--footer-h);
+      border-top:1px solid var(--line); background:var(--surface); color:#9AA3AE;
+      z-index:50;
+    }
+    .footer .row{
+      max-width:1920px; margin:0 auto; height:100%;
+      padding:0 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    @media (max-width:1023.98px){ .footer{ display:none } }
+
+    .dock{ display:none }
+    @media (max-width:1023.98px){
+      .dock{
+        display:block;
+        position:fixed; left:0; right:0; bottom:0;
+        z-index:60;
+        height:var(--dock-h);
+        padding-bottom:var(--safe-bottom);
+        border-top:1px solid var(--line);
+        background:rgba(10,11,14,.92);
+        color:var(--muted);
+        box-shadow:0 -10px 26px rgba(0,0,0,.35);
+        backdrop-filter:blur(18px) saturate(160%);
+        -webkit-backdrop-filter:blur(18px) saturate(160%);
+        transform:translateZ(0);
+        transition:transform var(--speed), background var(--speed), border-color var(--speed);
+      }
+      :root[data-theme="light"] .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+      .with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+      .dock .row{
+        height:var(--dock-h);
+        display:flex;
+        justify-content:space-around;
+        align-items:center;
+        padding:0 12px;
+        gap:4px;
+      }
+      .dock a{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:4px;
+        padding:8px 12px;
+        min-width:56px;
+        border-radius:14px;
+        color:inherit;
+        transition: background var(--speed), color var(--speed), transform var(--speed);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .dock a:active{ transform:scale(.97); }
+      .dock a.active,
+      .dock a:hover{
+        background:var(--elev);
+        transform:translateY(-1px);
+        color:var(--text);
+      }
+      .dock .label{ font-size:11px; color:inherit }
+    }
+    @media (max-width:1023.98px) and (prefers-color-scheme: light){
+      :root:not([data-theme="dark"]) .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+    }
+
+    .toast-root{
+      position:fixed; top:16px; right:16px; z-index:200;
+      display:grid; gap:8px; max-width:260px;
+    }
+    .toast{
+      padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.08);
+      background:rgba(12,108,209,.92); color:#fff; font-size:13px; font-weight:600;
+      box-shadow:var(--shadow);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="m-top" role="navigation" aria-label="상단 바(모바일)">
+      <div class="m-left"><div class="avatar" id="mAvatar" title="내 프로필"></div></div>
+      <div class="m-center"><div class="brand">LOOMA</div></div>
+      <div class="m-right">
+        <a href="notifications.html" data-nav aria-label="알림" class="notif-link"><i class="ri-notification-3-line"></i><span class="notif-badge hidden" data-notif-count></span></a>
+        <button class="icon-btn" id="btnAuthAction" aria-label="로그인" title="로그인"><i class="ri-login-circle-line"></i></button>
+      </div>
+    </div>
+
+    <main class="main">
+      <aside class="sidebar" aria-label="사이드바 내비게이션">
+        <div class="side-head"><div class="side-brand">LOOMA</div></div>
+        <div class="me-card hidden" id="sidebarSigned">
+          <div class="avatar" id="sidebarAvatar"></div>
+          <div>
+            <div class="name" id="sidebarName">회원명</div>
+            <div class="id" id="sidebarHandle">@handle</div>
+          </div>
+          <button class="icon-btn" id="btnLogout" aria-label="로그아웃" title="로그아웃"><i class="ri-logout-circle-line"></i></button>
+        </div>
+        <div class="me-card" id="sidebarGuest">
+          <div>
+            <div class="name">Guest</div>
+            <div class="id" style="font-size:12px; color:var(--muted)">로그인하고 더 많은 기능을 이용하세요.</div>
+          </div>
+          <button class="icon-btn" data-go="login" aria-label="로그인" title="로그인"><i class="ri-login-circle-line"></i></button>
+        </div>
+        <nav class="nav" id="sideNav">
+          <a href="home.html" data-nav><i class="ri-home-5-line icon"></i><span class="label">홈</span></a>
+          <a href="explore.html" data-nav><i class="ri-compass-3-line icon"></i><span class="label">탐색</span></a>
+          <a href="notifications.html" data-nav class="notif-nav"><i class="ri-notification-3-line icon"></i><span class="label">알림</span><span class="notif-badge hidden" data-notif-count></span></a>
+          <a href="messages.html" data-nav><i class="ri-chat-3-line icon"></i><span class="label">메시지</span></a>
+          <a href="profile.html" data-nav class="active"><i class="ri-user-3-line icon"></i><span class="label">프로필</span></a>
+          <a href="settings.html" data-nav><i class="ri-settings-3-line icon"></i><span class="label">설정</span></a>
+        </nav>
+      </aside>
+
+      <section class="profile-root" id="profileRoot">
+        <header class="profile-head">
+          <h1>프로필</h1>
+          <p id="profileSubtitle">사용자 정보를 확인하고 게시글을 둘러보세요.</p>
+        </header>
+
+        <div class="profile-guard hidden" id="profileGuard">
+          <h2 style="margin:0 0 8px" id="guardTitle">로그인이 필요합니다</h2>
+          <p style="margin:0 0 16px" id="guardDescription">프로필을 보려면 로그인해 주세요.</p>
+          <div style="display:flex; justify-content:center; gap:8px">
+            <button class="btn primary" data-go="login"><i class="ri-login-circle-line"></i><span>로그인/가입</span></button>
+          </div>
+        </div>
+
+        <section class="card profile-header hidden" id="profileHeader">
+          <div class="top">
+            <div style="display:flex; gap:18px; align-items:center">
+              <div class="profile-avatar-large" id="profileAvatar"></div>
+              <div class="profile-info">
+                <strong id="profileName">회원명</strong>
+                <div class="handle" id="profileHandle">@handle</div>
+                <div class="joined" id="profileJoined">가입일 정보 없음</div>
+              </div>
+            </div>
+            <div class="profile-actions" id="profileActions">
+              <button class="btn primary" id="btnFollow"><i class="ri-user-add-line"></i><span>팔로우</span></button>
+              <button class="btn outline hidden" id="btnEditProfile"><i class="ri-edit-box-line"></i><span>프로필 편집</span></button>
+            </div>
+          </div>
+          <div class="profile-stats" id="profileStats">
+            <div class="stat" aria-live="polite"><span id="statPosts">0</span><label>게시물</label></div>
+            <button class="stat" type="button" id="btnFollowers" aria-label="팔로워 목록 보기"><span id="statFollowers">0</span><label>팔로워</label></button>
+            <button class="stat" type="button" id="btnFollowing" aria-label="팔로잉 목록 보기"><span id="statFollowing">0</span><label>팔로잉</label></button>
+          </div>
+        </section>
+
+        <section class="card hidden" id="postsSection">
+          <h2 style="margin:0 0 16px; font-size:16px; font-weight:700">게시물</h2>
+          <div class="post-list" id="postList"></div>
+        </section>
+      </section>
+
+      <aside class="rrail" aria-label="오른쪽 안내">
+        <div class="card">
+          <div style="font-weight:700; margin-bottom:8px">Tip</div>
+          <p style="margin:0; color:var(--muted); font-size:12px">팔로우하면 상대의 새 게시글이 홈 피드에 나타납니다.</p>
+        </div>
+        <div class="card">
+          <div style="font-weight:700; margin-bottom:8px">안내</div>
+          <p style="margin:0; color:var(--muted); font-size:12px">프로필은 공개입니다. 민감한 정보는 설정에서 관리해 주세요.</p>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer" role="contentinfo">
+      <div class="row">
+        <div>© 2025 LOOMA. All rights reserved.</div>
+        <div style="display:flex; gap:12px">
+          <a class="muted" href="terms.html" data-nav>이용 약관</a>
+          <a class="muted" href="privacy.html" data-nav>개인정보 처리방침</a>
+          <a class="muted" href="https://luminarylabs.netlify.app" target="_blank" rel="noopener noreferrer">Luminary Labs 소개</a>
+        </div>
+      </div>
+    </footer>
+
+    <nav class="dock" role="navigation" aria-label="하단 메뉴(모바일)">
+      <div class="row" id="dockNav">
+        <a href="home.html" data-nav><i class="ri-home-5-line"></i><span class="label">홈</span></a>
+        <a href="explore.html" data-nav><i class="ri-compass-3-line"></i><span class="label">탐색</span></a>
+        <a href="messages.html" data-nav><i class="ri-chat-3-line"></i><span class="label">메시지</span></a>
+        <a href="profile.html" data-nav class="active"><i class="ri-user-3-line"></i><span class="label">프로필</span></a>
+        <a href="settings.html" data-nav><i class="ri-settings-3-line"></i><span class="label">설정</span></a>
+      </div>
+    </nav>
+  </div>
+
+  <div class="modal" id="modalFollowList" aria-hidden="true">
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="followModalTitle">
+      <div class="head">
+        <h2 class="title" id="followModalTitle">팔로워</h2>
+        <button class="close-btn" type="button" data-close="follow-modal" aria-label="닫기">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+      <div class="body">
+        <p class="follow-desc" id="followModalSubtitle"></p>
+        <div class="follow-loading hidden" id="followListLoading">불러오는 중…</div>
+        <div class="follow-error hidden" id="followListError"></div>
+        <div class="follow-empty hidden" id="followListEmpty">표시할 사용자가 없습니다.</div>
+        <ul class="follow-list" id="followList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 게시물 옵션 모달 -->
+  <div class="modal" id="modalPostActions" aria-hidden="true" role="dialog" aria-label="게시물 옵션">
+    <div class="panel">
+      <div class="head">
+        <strong>게시물 옵션</strong>
+        <button class="close-btn" type="button" data-close-modal="post-actions" aria-label="닫기"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="body">
+        <div class="action-list" id="postActionsList">
+          <button class="action-row" data-menu-action="copy" type="button"><span>링크 복사</span><i class="ri-file-copy-line"></i></button>
+          <button class="action-row" data-menu-action="share" type="button"><span>공유하기</span><i class="ri-share-forward-line"></i></button>
+          <button class="action-row danger" data-menu-action="report" type="button"><span>신고하기</span><i class="ri-flag-2-line"></i></button>
+          <button class="action-row danger hidden" data-owner-only="true" data-menu-action="delete" type="button"><span>게시물 삭제</span><i class="ri-delete-bin-line"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 게시물 삭제 모달 -->
+  <div class="modal" id="modalPostDelete" aria-hidden="true" role="dialog" aria-label="게시물 삭제">
+    <div class="panel">
+      <form id="postDeleteForm">
+        <div class="head">
+          <strong>게시물 삭제</strong>
+          <button class="close-btn" type="button" data-close-modal="post-delete" aria-label="닫기"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="body">
+          <p class="note" style="margin:0">정말 삭제할까요? 삭제한 후에는 되돌릴 수 없습니다.</p>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" data-close-modal="post-delete">취소</button>
+          <button class="btn danger" type="submit">삭제</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 게시물 신고 모달 -->
+  <div class="modal" id="modalPostReport" aria-hidden="true" role="dialog" aria-label="게시물 신고">
+    <div class="panel">
+      <form id="profileReportForm">
+        <div class="head">
+          <strong>게시물 신고</strong>
+          <button class="close-btn" type="button" data-close-modal="post-report" aria-label="닫기"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="body">
+          <label class="muted" for="profileReportReason" style="display:block; margin-bottom:6px">신고 사유</label>
+          <select id="profileReportReason" required>
+            <option value="">사유를 선택하세요</option>
+            <option value="spam">스팸/광고</option>
+            <option value="abuse">혐오/욕설</option>
+            <option value="privacy">개인정보 노출</option>
+            <option value="etc">기타</option>
+          </select>
+          <label class="muted" for="profileReportDetail" style="display:block; margin:12px 0 6px">상세 설명 (선택)</label>
+          <textarea id="profileReportDetail" rows="4" placeholder="상세 내용을 입력해 주세요"></textarea>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" data-close-modal="post-report">취소</button>
+          <button class="btn primary" type="submit">신고</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-root" id="toastRoot"></div>
+
+  <script>
+    (() => {
+      const $ = (selector, scope = document) => scope.querySelector(selector);
+      const state = {
+        viewer: null,
+        profile: null,
+        stats: { followers: 0, following: 0, posts: 0 },
+        posts: [],
+        isFollowing: false,
+        isSelf: false,
+        handleParam: null,
+        followLists: { followers: null, following: null },
+        followModalType: null,
+        postActionTarget: null,
+        postDeleteTarget: null,
+        reportTarget: null,
+      };
+      const elements = {
+        guard: $('#profileGuard'),
+        guardTitle: $('#guardTitle'),
+        guardDescription: $('#guardDescription'),
+        header: $('#profileHeader'),
+        postsSection: $('#postsSection'),
+        postList: $('#postList'),
+        statsFollowers: $('#statFollowers'),
+        statsFollowing: $('#statFollowing'),
+        statsPosts: $('#statPosts'),
+        profileName: $('#profileName'),
+        profileHandle: $('#profileHandle'),
+        profileJoined: $('#profileJoined'),
+        profileAvatar: $('#profileAvatar'),
+        sidebarAvatar: $('#sidebarAvatar'),
+        sidebarName: $('#sidebarName'),
+        sidebarHandle: $('#sidebarHandle'),
+        sidebarSigned: $('#sidebarSigned'),
+        sidebarGuest: $('#sidebarGuest'),
+        btnLogout: $('#btnLogout'),
+        btnAuthAction: $('#btnAuthAction'),
+        btnFollow: $('#btnFollow'),
+        btnFollowers: $('#btnFollowers'),
+        btnFollowing: $('#btnFollowing'),
+        profileActions: $('#profileActions'),
+        toastRoot: $('#toastRoot'),
+        mAvatar: $('#mAvatar'),
+        profileSubtitle: $('#profileSubtitle'),
+        btnEditProfile: $('#btnEditProfile'),
+        modalFollow: $('#modalFollowList'),
+        modalFollowTitle: $('#followModalTitle'),
+        modalFollowSubtitle: $('#followModalSubtitle'),
+        modalFollowList: $('#followList'),
+        modalFollowEmpty: $('#followListEmpty'),
+        modalFollowLoading: $('#followListLoading'),
+        modalFollowError: $('#followListError'),
+        modalPostActions: $('#modalPostActions'),
+        postActionsList: $('#postActionsList'),
+        modalPostDelete: $('#modalPostDelete'),
+        postDeleteForm: $('#postDeleteForm'),
+        modalReport: $('#modalPostReport'),
+        reportForm: $('#profileReportForm'),
+        reportReason: $('#profileReportReason'),
+        reportDetail: $('#profileReportDetail'),
+      };
+
+      function fetchJSON(path, { method = 'GET', body, headers } = {}) {
+        return fetch(path, {
+          method,
+          credentials: 'include',
+          headers: {
+            ...(body ? { 'Content-Type': 'application/json' } : {}),
+            ...(headers || {}),
+          },
+          body: body ? JSON.stringify(body) : undefined,
+        }).then(async (res) => {
+          const contentType = res.headers.get('content-type') || '';
+          const payload = contentType.includes('application/json')
+            ? await res.json().catch(() => null)
+            : await res.text().catch(() => null);
+          if (!res.ok) {
+            const err = new Error('Request failed');
+            err.status = res.status;
+            err.data = payload;
+            throw err;
+          }
+          return payload;
+        });
+      }
+
+      function openModal(el) {
+        if (!el) return;
+        el.classList.add('open');
+        el.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeModal(el) {
+        if (!el) return;
+        el.classList.remove('open');
+        el.setAttribute('aria-hidden', 'true');
+      }
+
+      function formatDate(iso) {
+        if (!iso) return '';
+        const date = new Date(iso);
+        if (Number.isNaN(date.getTime())) return '';
+        return new Intl.DateTimeFormat('ko', { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
+      }
+
+      function formatTime(iso) {
+        if (!iso) return '';
+        const date = new Date(iso);
+        if (Number.isNaN(date.getTime())) return '';
+        return new Intl.DateTimeFormat('ko', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+      }
+
+      function formatNumber(value) {
+        return new Intl.NumberFormat('ko').format(value || 0);
+      }
+
+      function navigateToProfile(handle) {
+        if (!handle) return;
+        const normalized = handle.startsWith('@') ? handle.slice(1) : handle;
+        if (!normalized) return;
+        window.location.href = `profile.html?handle=${encodeURIComponent(normalized)}`;
+      }
+
+      function setupNav() {
+        const current = location.pathname.split('/').pop() || 'home.html';
+        document.querySelectorAll('a[data-nav]').forEach((link) => {
+          const href = link.getAttribute('href') || '';
+          if (!href) return;
+          link.classList.toggle('active', href === current);
+          link.addEventListener('click', (event) => {
+            if (!href.endsWith('.html')) return;
+            if (href === current) {
+              event.preventDefault();
+              return;
+            }
+            event.preventDefault();
+            if (document.startViewTransition) {
+              document.startViewTransition(() => {
+                window.location.href = href;
+              });
+            } else {
+              window.location.href = href;
+            }
+          });
+        });
+      }
+
+      function applyAvatar(el, url) {
+        if (!el) return;
+        if (url) {
+          const safe = String(url).replace(/"/g, '%22').replace(/'/g, '%27');
+          el.style.backgroundImage = `url("${safe}")`;
+        } else {
+          el.style.backgroundImage = '';
+        }
+      }
+
+      function applyViewer(viewer) {
+        state.viewer = viewer || null;
+        if (viewer) {
+          elements.sidebarSigned?.classList.remove('hidden');
+          elements.sidebarGuest?.classList.add('hidden');
+          elements.sidebarName && (elements.sidebarName.textContent = viewer.name || '회원');
+          elements.sidebarHandle && (elements.sidebarHandle.textContent = viewer.handle || '');
+          elements.btnAuthAction?.setAttribute('aria-label', '로그아웃');
+          elements.btnAuthAction?.setAttribute('title', '로그아웃');
+        } else {
+          elements.sidebarSigned?.classList.add('hidden');
+          elements.sidebarGuest?.classList.remove('hidden');
+          elements.btnAuthAction?.setAttribute('aria-label', '로그인');
+          elements.btnAuthAction?.setAttribute('title', '로그인');
+        }
+        applyAvatar(elements.sidebarAvatar, viewer?.avatarUrl || null);
+        applyAvatar(elements.mAvatar, viewer?.avatarUrl || null);
+      }
+
+      function showToast(message) {
+        if (!elements.toastRoot) return;
+        const node = document.createElement('div');
+        node.className = 'toast';
+        node.textContent = message;
+        elements.toastRoot.appendChild(node);
+        setTimeout(() => {
+          node.style.opacity = '0';
+          setTimeout(() => node.remove(), 200);
+        }, 2000);
+      }
+
+      function buildPostLink(postId) {
+        const url = new URL('home.html', window.location.origin);
+        url.searchParams.set('post', postId);
+        return url.toString();
+      }
+
+      async function copyPostLink(postId) {
+        const link = buildPostLink(postId);
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(link);
+          } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = link;
+            textarea.setAttribute('readonly', 'readonly');
+            textarea.style.position = 'absolute';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            textarea.remove();
+          }
+          showToast('링크를 복사했습니다.');
+        } catch (err) {
+          console.error(err);
+          showToast('링크를 복사하지 못했습니다.');
+        }
+      }
+
+      async function sharePostLink(postId) {
+        const link = buildPostLink(postId);
+        if (navigator.share) {
+          try {
+            await navigator.share({ url: link });
+            return;
+          } catch (err) {
+            if (err?.name === 'AbortError') return;
+          }
+        }
+        await copyPostLink(postId);
+      }
+
+      function openPostActionsMenu(postId) {
+        if (!elements.modalPostActions) return;
+        state.postActionTarget = { id: postId, isOwner: !!state.isSelf };
+        elements.postActionsList
+          ?.querySelectorAll('[data-owner-only]')
+          .forEach((btn) => btn.classList.toggle('hidden', !state.isSelf));
+        openModal(elements.modalPostActions);
+      }
+
+      function closePostActionsMenu() {
+        if (elements.modalPostActions) closeModal(elements.modalPostActions);
+        state.postActionTarget = null;
+      }
+
+      function openDeleteModal(postId) {
+        if (!state.isSelf || !elements.modalPostDelete) {
+          showToast('삭제 권한이 없습니다.');
+          return;
+        }
+        state.postDeleteTarget = postId;
+        openModal(elements.modalPostDelete);
+      }
+
+      function closeDeleteModal() {
+        if (elements.modalPostDelete) closeModal(elements.modalPostDelete);
+        state.postDeleteTarget = null;
+      }
+
+      function openReportModal(postId) {
+        if (!state.viewer) {
+          window.location.href = 'auth.html';
+          return;
+        }
+        if (!elements.modalReport) return;
+        state.reportTarget = postId;
+        elements.reportForm?.reset();
+        openModal(elements.modalReport);
+      }
+
+      function closeReportModal() {
+        if (elements.modalReport) closeModal(elements.modalReport);
+        state.reportTarget = null;
+      }
+
+      function handleModalClose(target) {
+        switch (target) {
+          case 'post-actions':
+            closePostActionsMenu();
+            break;
+          case 'post-delete':
+            closeDeleteModal();
+            break;
+          case 'post-report':
+            closeReportModal();
+            break;
+          default:
+            break;
+        }
+      }
+
+      function resetFollowLists() {
+        state.followLists = { followers: null, following: null };
+      }
+
+      function renderFollowList(type, { items = [], loading = false, error = '' } = {}) {
+        if (!elements.modalFollowList) return;
+        if (elements.modalFollowLoading) {
+          elements.modalFollowLoading.classList.toggle('hidden', !loading);
+        }
+        if (elements.modalFollowError) {
+          if (error) elements.modalFollowError.textContent = error;
+          elements.modalFollowError.classList.toggle('hidden', !error);
+        }
+        const showEmpty = !loading && !error && (!items || !items.length);
+        if (elements.modalFollowEmpty) {
+          elements.modalFollowEmpty.classList.toggle('hidden', !showEmpty);
+        }
+        elements.modalFollowList.innerHTML = '';
+        if (loading || error || !Array.isArray(items)) return;
+        items.forEach((entry) => {
+          if (!entry?.user) return;
+          const li = document.createElement('li');
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'follow-item';
+          const handle = entry.user.handle || '';
+          if (handle) btn.dataset.profileHandle = handle;
+          const avatar = document.createElement('div');
+          avatar.className = 'follow-avatar';
+          applyAvatar(avatar, entry.user.avatarUrl || null);
+          if (!entry.user.avatarUrl) {
+            const label = String(entry.user.name || entry.user.handle || '').replace(/^@/, '').trim();
+            avatar.textContent = label ? label.charAt(0).toUpperCase() : '';
+          } else {
+            avatar.textContent = '';
+          }
+          const meta = document.createElement('div');
+          meta.className = 'follow-meta';
+          const nameEl = document.createElement('strong');
+          nameEl.textContent = entry.user.name || entry.user.handle || '사용자';
+          const sub = document.createElement('div');
+          sub.className = 'follow-sub';
+          const handleEl = document.createElement('span');
+          handleEl.className = 'follow-handle';
+          handleEl.textContent = entry.user.handle || '';
+          sub.appendChild(handleEl);
+          if (entry.isMutual) {
+            const badge = document.createElement('span');
+            badge.className = 'follow-badge';
+            badge.textContent = '맞팔';
+            sub.appendChild(badge);
+          } else if (entry.isFollowing) {
+            const badge = document.createElement('span');
+            badge.className = 'follow-badge';
+            badge.textContent = '팔로잉';
+            sub.appendChild(badge);
+          }
+          meta.appendChild(nameEl);
+          meta.appendChild(sub);
+          btn.appendChild(avatar);
+          btn.appendChild(meta);
+          li.appendChild(btn);
+          elements.modalFollowList.appendChild(li);
+        });
+      }
+
+      async function fetchFollowList(type) {
+        if (!state.profile) return [];
+        const cached = state.followLists?.[type];
+        if (cached && Array.isArray(cached.items)) return cached.items;
+        const handle = state.profile.handle ? state.profile.handle.replace(/^@/, '') : null;
+        const userId = state.profile.id || null;
+        const query = handle
+          ? `?handle=${encodeURIComponent(handle)}`
+          : userId
+          ? `?id=${encodeURIComponent(userId)}`
+          : '';
+        const res = await fetchJSON(`/api/users/${type}${query}`);
+        const items = Array.isArray(res?.users)
+          ? res.users
+              .map((entry) => {
+                if (!entry?.user) return null;
+                return {
+                  user: entry.user,
+                  followedAt: entry.followedAt || null,
+                  isFollowing: !!entry.isFollowing,
+                  isMutual: !!entry.isMutual,
+                };
+              })
+              .filter(Boolean)
+          : [];
+        state.followLists[type] = { items };
+        return items;
+      }
+
+      async function openFollowModal(type) {
+        if (!elements.modalFollow) return;
+        state.followModalType = type;
+        const isFollowers = type === 'followers';
+        elements.modalFollowTitle && (elements.modalFollowTitle.textContent = isFollowers ? '팔로워' : '팔로잉');
+        if (elements.modalFollowSubtitle) {
+          const subject = state.profile?.handle || state.profile?.name || '';
+          elements.modalFollowSubtitle.textContent = subject
+            ? `${subject}님의 ${isFollowers ? '팔로워' : '팔로잉'} 목록입니다.`
+            : isFollowers
+            ? '팔로워 목록입니다.'
+            : '팔로잉 목록입니다.';
+        }
+        elements.modalFollow.classList.add('open');
+        elements.modalFollow.setAttribute('aria-hidden', 'false');
+        renderFollowList(type, { loading: true });
+        try {
+          const list = await fetchFollowList(type);
+          renderFollowList(type, { items: list, loading: false });
+        } catch (err) {
+          console.error(err);
+          let message = '목록을 불러오지 못했습니다.';
+          if (err?.status === 404) message = '사용자를 찾을 수 없습니다.';
+          if (err?.status === 501) message = err?.data?.message || '팔로우 기능이 아직 구성되지 않았습니다.';
+          renderFollowList(type, { loading: false, error: message });
+        }
+      }
+
+      function closeFollowModal() {
+        if (!elements.modalFollow) return;
+        state.followModalType = null;
+        elements.modalFollow.classList.remove('open');
+        elements.modalFollow.setAttribute('aria-hidden', 'true');
+      }
+
+      function showGuard(title, description) {
+        if (!elements.guard) return;
+        elements.guardTitle && (elements.guardTitle.textContent = title);
+        elements.guardDescription && (elements.guardDescription.textContent = description);
+        elements.guard.classList.remove('hidden');
+        elements.header?.classList.add('hidden');
+        elements.postsSection?.classList.add('hidden');
+      }
+
+      function hideGuard() {
+        elements.guard?.classList.add('hidden');
+        elements.header?.classList.remove('hidden');
+        elements.postsSection?.classList.remove('hidden');
+      }
+
+      function renderProfile() {
+        if (!state.profile) return;
+        const profile = state.profile;
+        elements.profileName && (elements.profileName.textContent = profile.name || '');
+        elements.profileHandle && (elements.profileHandle.textContent = profile.handle || '');
+        elements.profileJoined && (elements.profileJoined.textContent = profile.createdAt ? `가입일 · ${formatDate(profile.createdAt)}` : '');
+        applyAvatar(elements.profileAvatar, profile.avatarUrl || null);
+        const stats = state.stats || { followers: 0, following: 0, posts: 0 };
+        elements.statsFollowers && (elements.statsFollowers.textContent = formatNumber(stats.followers));
+        elements.statsFollowing && (elements.statsFollowing.textContent = formatNumber(stats.following));
+        elements.statsPosts && (elements.statsPosts.textContent = formatNumber(stats.posts));
+        if (state.isSelf) {
+          elements.profileActions?.classList.remove('hidden');
+          elements.btnFollow?.classList.add('hidden');
+          elements.btnEditProfile?.classList.remove('hidden');
+        } else {
+          elements.profileActions?.classList.remove('hidden');
+          elements.btnEditProfile?.classList.add('hidden');
+          if (elements.btnFollow) {
+            elements.btnFollow.classList.remove('hidden');
+            const followLabel = elements.btnFollow.querySelector('span');
+            const followIcon = elements.btnFollow.querySelector('i');
+            if (followLabel) followLabel.textContent = state.isFollowing ? '팔로잉' : '팔로우';
+            if (followIcon) followIcon.className = state.isFollowing ? 'ri-user-follow-line' : 'ri-user-add-line';
+            elements.btnFollow.classList.toggle('primary', !state.isFollowing);
+            elements.btnFollow.classList.toggle('outline', state.isFollowing);
+          }
+        }
+      }
+
+      function renderPosts() {
+        if (!elements.postList) return;
+        elements.postList.innerHTML = '';
+        const posts = state.posts || [];
+        if (!posts.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.textContent = state.isSelf ? '아직 작성한 게시물이 없습니다.' : '게시물이 없습니다.';
+          elements.postList.appendChild(empty);
+          return;
+        }
+        posts.forEach((post) => {
+          const card = document.createElement('article');
+          card.className = 'post-card';
+          card.dataset.postId = post.id;
+          card.dataset.owner = state.isSelf ? 'true' : 'false';
+          const headerRow = document.createElement('div');
+          headerRow.className = 'post-header-row';
+          const info = document.createElement('div');
+          const author = document.createElement('div');
+          author.textContent = state.profile?.name || '';
+          const meta = document.createElement('div');
+          meta.className = 'post-meta';
+          meta.textContent = formatTime(post.createdAt);
+          info.appendChild(author);
+          info.appendChild(meta);
+          const menuBtn = document.createElement('button');
+          menuBtn.className = 'post-menu-btn';
+          menuBtn.type = 'button';
+          menuBtn.setAttribute('aria-label', '게시물 옵션');
+          menuBtn.setAttribute('data-post-menu', post.id);
+          menuBtn.innerHTML = '<i class="ri-more-2-fill"></i>';
+          headerRow.appendChild(info);
+          headerRow.appendChild(menuBtn);
+          const body = document.createElement('div');
+          body.className = 'post-text';
+          body.textContent = post.text || '';
+          card.appendChild(headerRow);
+          if (post.text) card.appendChild(body);
+          if (Array.isArray(post.attachments) && post.attachments.length) {
+            const attachmentsEl = document.createElement('div');
+            attachmentsEl.className = 'attachments';
+            post.attachments.forEach((att) => {
+              if (!att) return;
+              if (att.type === 'image') {
+                const img = document.createElement('img');
+                img.src = att.url;
+                img.alt = '이미지 첨부';
+                attachmentsEl.appendChild(img);
+              } else if (att.type === 'video') {
+                const video = document.createElement('video');
+                video.src = att.url;
+                video.controls = true;
+                attachmentsEl.appendChild(video);
+              } else {
+                const link = document.createElement('a');
+                link.href = att.url || '#';
+                link.textContent = att.filename || att.type || '첨부 파일';
+                link.target = '_blank';
+                attachmentsEl.appendChild(link);
+              }
+            });
+            card.appendChild(attachmentsEl);
+          }
+          elements.postList.appendChild(card);
+        });
+      }
+
+      async function deletePost(postId) {
+        if (!state.isSelf || !postId) return;
+        await fetchJSON(`/api/posts/${encodeURIComponent(postId)}`, { method: 'DELETE', body: {} });
+        state.posts = (state.posts || []).filter((post) => post.id !== postId);
+        if (state.stats && typeof state.stats.posts === 'number') {
+          state.stats.posts = Math.max(0, state.stats.posts - 1);
+          elements.statsPosts && (elements.statsPosts.textContent = formatNumber(state.stats.posts));
+        }
+        renderPosts();
+        showToast('게시물을 삭제했습니다.');
+      }
+
+      async function loadProfile() {
+        const params = new URLSearchParams(location.search);
+        const handle = params.get('handle');
+        state.handleParam = handle || null;
+        resetFollowLists();
+        let query = '';
+        if (handle) {
+          query = `?handle=${encodeURIComponent(handle)}`;
+        }
+        try {
+          const res = await fetchJSON(`/api/users/profile${query}`);
+          applyViewer(res.viewer || null);
+          state.profile = res.user || null;
+          state.stats = res.stats || { followers: 0, following: 0, posts: 0 };
+          state.posts = (res.posts || []).filter((post) => (post.status || 'active') !== 'removed');
+          state.isFollowing = !!res.isFollowing;
+          state.isSelf = !!res.isSelf;
+        if (elements.profileSubtitle) {
+          if (state.isSelf) {
+            elements.profileSubtitle.textContent = '내가 작성한 게시물을 모아봤어요.';
+          } else if (state.profile?.handle) {
+            elements.profileSubtitle.textContent = `${state.profile.handle}님의 게시물입니다.`;
+          } else {
+            elements.profileSubtitle.textContent = '사용자 게시물을 확인해 보세요.';
+          }
+        }
+          hideGuard();
+          renderProfile();
+          renderPosts();
+        } catch (err) {
+          if (err.status === 401) {
+            if (state.handleParam) {
+              state.profile = null;
+              state.stats = { followers: 0, following: 0, posts: 0 };
+              state.posts = [];
+              state.isFollowing = false;
+              state.isSelf = false;
+              applyViewer(null);
+              hideGuard();
+              elements.profileSubtitle && (elements.profileSubtitle.textContent = `${state.handleParam}님의 게시물입니다.`);
+              renderProfile();
+              renderPosts();
+            } else {
+              applyViewer(null);
+              showGuard('로그인이 필요합니다', '내 프로필을 보려면 로그인해 주세요.');
+            }
+            return;
+          }
+          if (err.status === 501) {
+            const message = err.data?.message || 'Supabase 프로필 테이블이 아직 구성되지 않았습니다.';
+            showGuard('프로필 기능 미구성', message);
+            return;
+          }
+          if (err.status === 404) {
+            showGuard('사용자를 찾을 수 없습니다', '요청한 프로필이 존재하지 않습니다.');
+            return;
+          }
+          console.error(err);
+          showGuard('오류', '프로필을 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+        }
+      }
+
+      async function toggleFollow() {
+        if (!state.profile) return;
+        if (!state.viewer) {
+          window.location.href = 'auth.html';
+          return;
+        }
+        if (!elements.btnFollow) return;
+        elements.btnFollow.disabled = true;
+        try {
+          const method = state.isFollowing ? 'DELETE' : 'POST';
+          const res = await fetchJSON(`/api/users/${encodeURIComponent(state.profile.handle || '')}/follow`, {
+            method,
+            body: {},
+          });
+          state.isFollowing = method === 'POST';
+          if (res && res.stats) {
+            state.stats.followers = res.stats.followers ?? state.stats.followers;
+            state.stats.following = res.stats.following ?? state.stats.following;
+            state.stats.posts = res.stats.posts ?? state.stats.posts;
+          }
+          resetFollowLists();
+          renderProfile();
+          showToast(state.isFollowing ? '팔로우했습니다.' : '팔로우를 취소했습니다.');
+        } catch (err) {
+          if (err.status === 401) {
+            window.location.href = 'auth.html';
+            return;
+          }
+          if (err.status === 501) {
+            const message = err.data?.message || '프로필 기능이 아직 구성되지 않았습니다.';
+            showToast(message);
+            return;
+          }
+          console.error(err);
+          showToast('요청을 처리하지 못했습니다.');
+        } finally {
+          elements.btnFollow.disabled = false;
+        }
+      }
+
+      async function logout() {
+        try {
+          await fetchJSON('/api/logout', { method: 'POST', body: {} });
+          window.location.href = 'auth.html';
+        } catch (err) {
+          console.error(err);
+          showToast('로그아웃에 실패했습니다.');
+        }
+      }
+
+      document.addEventListener('click', (event) => {
+        const menuBtn = event.target.closest('[data-post-menu]');
+        if (menuBtn) {
+          event.preventDefault();
+          const postId = menuBtn.getAttribute('data-post-menu');
+          openPostActionsMenu(postId);
+          return;
+        }
+        const closeModalBtn = event.target.closest('[data-close-modal]');
+        if (closeModalBtn) {
+          event.preventDefault();
+          handleModalClose(closeModalBtn.getAttribute('data-close-modal'));
+          return;
+        }
+        const closeFollow = event.target.closest('[data-close="follow-modal"]');
+        if (closeFollow) {
+          event.preventDefault();
+          closeFollowModal();
+          return;
+        }
+        const goTarget = event.target.closest('[data-go]');
+        if (goTarget) {
+          event.preventDefault();
+          const dest = goTarget.getAttribute('data-go');
+          if (dest === 'login') window.location.href = 'auth.html';
+        }
+      });
+
+      elements.postActionsList?.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-menu-action]');
+        if (!button) return;
+        event.preventDefault();
+        const action = button.getAttribute('data-menu-action');
+        const target = state.postActionTarget;
+        if (!target) return;
+        const postId = target.id;
+        switch (action) {
+          case 'copy':
+            await copyPostLink(postId);
+            closePostActionsMenu();
+            break;
+          case 'share':
+            await sharePostLink(postId);
+            closePostActionsMenu();
+            break;
+          case 'report':
+            closePostActionsMenu();
+            openReportModal(postId);
+            break;
+          case 'delete':
+            closePostActionsMenu();
+            if (!target.isOwner) {
+              showToast('삭제 권한이 없습니다.');
+              return;
+            }
+            openDeleteModal(postId);
+            break;
+          default:
+            break;
+        }
+      });
+
+      elements.postDeleteForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!state.postDeleteTarget) return;
+        try {
+          await deletePost(state.postDeleteTarget);
+          closeDeleteModal();
+        } catch (err) {
+          console.error(err);
+          showToast('게시물을 삭제하지 못했습니다.');
+        }
+      });
+
+      elements.reportForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!state.reportTarget) return;
+        const reason = (elements.reportReason?.value || '').trim();
+        const detail = (elements.reportDetail?.value || '').trim();
+        if (!reason) {
+          showToast('신고 사유를 선택하세요.');
+          return;
+        }
+        try {
+          await fetchJSON(`/api/posts/${encodeURIComponent(state.reportTarget)}/report`, {
+            method: 'POST',
+            body: { reason, detail },
+          });
+          showToast('신고가 접수되었습니다.');
+          closeReportModal();
+        } catch (err) {
+          console.error(err);
+          const message = err.data?.message || '신고를 전송하지 못했습니다.';
+          showToast(message);
+        }
+      });
+
+      [elements.modalPostActions, elements.modalPostDelete, elements.modalReport].forEach((modal) => {
+        modal?.addEventListener('click', (event) => {
+          if (event.target === modal) {
+            if (modal === elements.modalPostActions) handleModalClose('post-actions');
+            if (modal === elements.modalPostDelete) handleModalClose('post-delete');
+            if (modal === elements.modalReport) handleModalClose('post-report');
+          }
+        });
+      });
+
+      elements.btnAuthAction?.addEventListener('click', () => {
+        if (state.viewer) {
+          if (confirm('로그아웃하시겠습니까?')) logout();
+        } else {
+          window.location.href = 'auth.html';
+        }
+      });
+      elements.btnLogout?.addEventListener('click', () => {
+        if (confirm('로그아웃하시겠습니까?')) logout();
+      });
+      elements.btnFollow?.addEventListener('click', toggleFollow);
+      elements.btnEditProfile?.addEventListener('click', () => {
+        window.location.href = 'settings.html#profile';
+      });
+      elements.btnFollowers?.addEventListener('click', () => openFollowModal('followers'));
+      elements.btnFollowing?.addEventListener('click', () => openFollowModal('following'));
+      elements.modalFollow?.addEventListener('click', (event) => {
+        if (event.target === elements.modalFollow) {
+          closeFollowModal();
+        }
+      });
+      elements.modalFollowList?.addEventListener('click', (event) => {
+        const item = event.target.closest('.follow-item');
+        if (!item) return;
+        const handle = item.dataset.profileHandle;
+        if (handle) {
+          closeFollowModal();
+          navigateToProfile(handle);
+        }
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          if (state.followModalType) closeFollowModal();
+          if (state.postActionTarget) closePostActionsMenu();
+          if (state.postDeleteTarget) closeDeleteModal();
+          if (state.reportTarget) closeReportModal();
+        }
+      });
+
+      setupNav();
+      loadProfile();
+    })();
+  </script>
+</body>
+</html>

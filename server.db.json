@@ -1,0 +1,265 @@
+{
+  "config": {
+    "allowAnon": true,
+    "registrationMode": "open",
+    "basicPostingRestricted": false
+  },
+  "users": {
+    "u1": {
+      "id": "u1",
+      "handle": "@looma_owner",
+      "name": "성민 윤",
+      "passwordHash": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
+      "createdAt": "2025-10-11T17:31:22.084Z",
+      "email": "owner@looma.local",
+      "phone": "010-0000-0000",
+      "avatarUrl": null
+    },
+    "u_45fff8719141975a": {
+      "id": "u_45fff8719141975a",
+      "email": "yoon080708@gmail.com",
+      "phone": "010-4669-4985",
+      "handle": "@nuguls",
+      "name": "윤성민",
+      "passwordHash": "ee99244988fb2bb82657dc0d722f270df729a3f431bd7a31a4dcc42714737d51",
+      "avatarUrl": null,
+      "createdAt": "2025-10-11T17:39:23.161Z"
+    }
+  },
+  "sessions": {},
+  "clients": {},
+  "posts": [
+    {
+      "id": "p_a6434fa1c39e",
+      "author": {
+        "id": "u_45fff8719141975a",
+        "handle": "@nuguls",
+        "name": "윤성민",
+        "avatarUrl": null
+      },
+      "text": "하이",
+      "createdAt": "2025-10-11T17:39:33.901Z",
+      "attachments": [],
+      "comments": []
+    },
+    {
+      "id": "p_3fe1b0e13d37",
+      "author": {
+        "id": "testUser",
+        "handle": "@test",
+        "name": "Tester",
+        "avatarUrl": null
+      },
+      "text": "poll test",
+      "createdAt": "2025-10-12T03:05:58.703Z",
+      "attachments": [
+        {
+          "type": "poll",
+          "pollId": "poll_5bf8c4d79823",
+          "question": "Q?",
+          "options": [
+            {
+              "id": "opt_7824b15c",
+              "text": "A",
+              "count": 0
+            },
+            {
+              "id": "opt_7c7e8ddc",
+              "text": "B",
+              "count": 0
+            }
+          ],
+          "totalVotes": 0,
+          "voters": {
+            "users": {},
+            "clients": {}
+          },
+          "createdAt": "2025-10-12T03:05:58.704Z"
+        }
+      ],
+      "comments": []
+    },
+    {
+      "id": "p_56b18d90dd4b",
+      "author": {
+        "id": "user_test",
+        "handle": "@user",
+        "name": "User",
+        "avatarUrl": null
+      },
+      "text": "poll",
+      "createdAt": "2025-10-12T03:09:32.144Z",
+      "attachments": [
+        {
+          "type": "poll",
+          "pollId": "poll_93998057f0cc",
+          "question": "최고?",
+          "options": [
+            {
+              "id": "opt_450130b7",
+              "text": "네",
+              "count": 1
+            },
+            {
+              "id": "opt_20e2665d",
+              "text": "아니요",
+              "count": 0
+            }
+          ],
+          "totalVotes": 1,
+          "voters": {
+            "users": {
+              "user_test": "opt_450130b7"
+            },
+            "clients": {}
+          },
+          "createdAt": "2025-10-12T03:09:32.144Z"
+        }
+      ],
+      "comments": []
+    },
+    {
+      "id": "p_c84813a690f5",
+      "author": {
+        "id": "u_test",
+        "handle": "@user",
+        "name": "User",
+        "avatarUrl": null
+      },
+      "text": "poll",
+      "createdAt": "2025-10-12T03:20:53.278Z",
+      "attachments": [
+        {
+          "type": "poll",
+          "pollId": "poll_4b93e818eea1",
+          "question": "좋아요?",
+          "options": [
+            {
+              "id": "opt_42a6813b",
+              "text": "예",
+              "count": 1
+            },
+            {
+              "id": "opt_2a85c0db",
+              "text": "아니오",
+              "count": 0
+            }
+          ],
+          "totalVotes": 1,
+          "voters": {
+            "users": {
+              "u_test": "opt_42a6813b"
+            },
+            "clients": {}
+          },
+          "createdAt": "2025-10-12T03:20:53.278Z"
+        }
+      ],
+      "comments": []
+    },
+    {
+      "id": "p_66bfb08678d0",
+      "author": {
+        "id": "u_test2",
+        "handle": "@user",
+        "name": "User",
+        "avatarUrl": null
+      },
+      "text": "poll2",
+      "createdAt": "2025-10-12T03:23:22.808Z",
+      "attachments": [
+        {
+          "type": "poll",
+          "pollId": "poll_47d2d33f8ee3",
+          "question": "좋아요?",
+          "options": [
+            {
+              "id": "opt_baf399648ce0",
+              "text": "예",
+              "count": 1
+            },
+            {
+              "id": "opt_e0c8b9f4abb4",
+              "text": "아니오",
+              "count": 0
+            }
+          ],
+          "totalVotes": 1,
+          "voters": {
+            "users": {
+              "u_test2": "opt_baf399648ce0"
+            },
+            "clients": {}
+          },
+          "createdAt": "2025-10-12T03:23:22.808Z"
+        }
+      ],
+      "comments": []
+    }
+  ],
+  "reports": [],
+  "messageChannels": [
+    {
+      "id": "square",
+      "type": "square",
+      "name": "모두의 광장",
+      "desc": "Looma 전체 공개 채널",
+      "tags": [
+        "광장",
+        "공지"
+      ],
+      "avatar": "🌐",
+      "locked": true,
+      "createdAt": "2025-10-12T09:57:16.497Z",
+      "createdBy": null,
+      "members": []
+    },
+    {
+      "id": "grp_music",
+      "type": "group",
+      "name": "음악 감상실",
+      "desc": "새 음악과 공연 소식을 나눠요",
+      "tags": [
+        "문화",
+        "취향"
+      ],
+      "avatar": "🎧",
+      "locked": false,
+      "createdAt": "2025-10-12T09:57:16.497Z",
+      "createdBy": "u1",
+      "members": []
+    },
+    {
+      "id": "grp_study",
+      "type": "group",
+      "name": "스터디 포럼",
+      "desc": "스터디 모집과 학습 자료를 공유해요",
+      "tags": [
+        "학습",
+        "커리어"
+      ],
+      "avatar": "📚",
+      "locked": false,
+      "createdAt": "2025-10-12T09:57:16.497Z",
+      "createdBy": "u1",
+      "members": []
+    },
+    {
+      "id": "grp_makers",
+      "type": "group",
+      "name": "메이커스 라운지",
+      "desc": "사이드 프로젝트와 제작 노하우를 나눠요",
+      "tags": [
+        "프로덕트",
+        "제작"
+      ],
+      "avatar": "🛠️",
+      "locked": false,
+      "createdAt": "2025-10-12T09:57:16.497Z",
+      "createdBy": "u1",
+      "members": []
+    }
+  ],
+  "messageMessages": [],
+  "userFollows": []
+}

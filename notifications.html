@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="ko" data-theme="auto">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Looma — Notifications</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Peta:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet"/>
+
+  <!-- PWA feel -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0A0A0A">
+  <script>
+    (function(){
+      try{
+        var root = document.documentElement;
+        var theme = localStorage.getItem('looma:theme');
+        if(theme !== 'light' && theme !== 'dark'){ theme = 'auto'; }
+        if(theme === 'auto'){ root.removeAttribute('data-theme'); }
+        else{ root.setAttribute('data-theme', theme); }
+        root.dataset.themePreference = theme;
+      }catch(err){
+        /* ignore */
+      }
+    })();
+  </script>
+  <script src="theme.js"></script>
+  <script src="notify-badge.js" defer></script>
+
+  <style>
+    :root{
+      --bg:#0A0A0A; --surface:#111213; --elev:#151618; --line:#1E2023;
+      --text:#EDEFF2; --muted:#9AA3AE; --brand:#0EA5E9;
+      --radius:12px; --shadow:0 6px 16px rgba(0,0,0,.16); --speed:.18s;
+      --dock-h:64px; --footer-h:44px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+        --text:#0B1220; --muted:#596174; --brand:#0077FF;
+        --shadow:0 10px 20px rgba(10,16,30,.06);
+      }
+    }
+    *{ box-sizing:border-box }
+    html, body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    a{ color:inherit; text-decoration:none }
+    button{ font:inherit; background:none; border:0; color:inherit; cursor:pointer }
+    input{
+      color:inherit; background:transparent; border:1px solid var(--line);
+      border-radius:10px; padding:10px 12px;
+    }
+
+    .notif-link{ position:relative; display:inline-flex; }
+    .notif-nav{ position:relative; }
+    .notif-badge{
+      position:absolute;
+      top:-4px;
+      right:-4px;
+      min-width:16px;
+      height:16px;
+      padding:0 4px;
+      border-radius:999px;
+      background:#ef4444;
+      color:#fff;
+      font-size:10px;
+      font-weight:700;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .notif-badge.hidden{ display:none !important; }
+
+    .app{ min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
+
+    /* ===== View Transitions (부드러운 전환) ===== */
+    @keyframes slideInDesktop{ from{ transform:translateX(8%); opacity:.92 } to{ transform:none; opacity:1 } }
+    @keyframes slideOutDesktop{ from{ transform:none; opacity:1 } to{ transform:translateX(-8%); opacity:.92 } }
+    @keyframes slideInMobile{ from{ transform:translateY(6%); opacity:.92 } to{ transform:none; opacity:1 } }
+    @keyframes slideOutMobile{ from{ transform:none; opacity:1 } to{ transform:translateY(-6%); opacity:.92 } }
+    @media (min-width:1024px){
+      ::view-transition-old(root){ animation: slideOutDesktop .24s ease both }
+      ::view-transition-new(root){ animation: slideInDesktop .24s ease both }
+    }
+    @media (max-width:1023.98px){
+      ::view-transition-old(root){ animation: slideOutMobile .24s ease both }
+      ::view-transition-new(root){ animation: slideInMobile .24s ease both }
+    }
+
+    /* ===== Mobile TopBar (home 동일) ===== */
+    .m-top{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-bottom:1px solid var(--line); background:var(--surface);
+      position:sticky; top:0; z-index:20;
+    }
+    .m-left{ display:flex; align-items:center; gap:10px }
+    .m-center{ position:absolute; left:50%; transform:translateX(-50%); pointer-events:none }
+    .m-right{ display:flex; align-items:center; gap:8px }
+    .brand{ font-family:"Lexend Peta"; font-weight:800; letter-spacing:.4px; color:var(--text) }
+    .avatar{
+      width:28px; height:28px; border-radius:50%; background:#D1D5DB; flex:0 0 28px;
+      display:flex; align-items:center; justify-content:center;
+      background-position:center; background-size:cover; background-repeat:no-repeat;
+      font-weight:700; font-size:12px; color:#fff; text-transform:uppercase;
+    }
+    .icon-btn{
+      width:32px; height:32px; border-radius:50%;
+      border:1px solid var(--line); background:var(--elev);
+      display:inline-flex; align-items:center; justify-content:center;
+      transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .icon-btn i{ font-size:16px; line-height:1; }
+    .icon-btn:hover{ background:var(--brand); border-color:transparent; color:#fff; transform:translateY(-1px) }
+    @media (min-width:1024px){ .m-top{ display:none } }
+
+    /* ===== Main Grid (home 동일) ===== */
+    .main{ display:grid; gap:16px; grid-template-columns:1fr; padding:16px }
+    @media (min-width:1024px){ .main{ grid-template-columns:260px 1fr 320px; padding-bottom:calc(var(--footer-h) + 8px) } }
+    .container{ max-width:unset; width:100%; margin:0 auto }
+
+    /* ===== Sidebar (home 그대로) ===== */
+    .sidebar{ display:none }
+    @media (min-width:1024px){
+      .sidebar{
+        display:flex; flex-direction:column; gap:14px;
+        border-right:1px solid var(--line); padding:20px 12px 20px 0;
+      }
+      .side-head{ padding:0 8px }
+      .side-brand{ font-family:"Lexend Peta"; font-weight:800; font-size:18px }
+      .me-card{
+        display:flex; align-items:center; gap:10px; padding:10px;
+        border:1px solid var(--line); border-radius:12px; background:var(--surface);
+        background-image: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.03));
+      }
+      .me-card .name{ font-weight:600 }
+      .me-card .id{ color:var(--muted); font-size:12px }
+
+      .nav{ display:flex; flex-direction:column; gap:6px; margin-top:4px }
+      .nav a{
+        display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+        border:1px solid transparent; transition: background var(--speed), border-color var(--speed);
+      }
+      .nav a:hover{ background:var(--elev); border-color:var(--line) }
+      .nav a.active{ background:var(--elev); border-color:var(--line) }
+      .nav .icon{ font-size:18px } .nav .label{ font-weight:600 }
+    }
+
+    /* ===== Right rail (알림 설정 힌트) ===== */
+    .rrail{ display:none }
+    @media (min-width:1024px){
+      .rrail{ display:flex; flex-direction:column; gap:12px; padding-left:12px }
+      .card{ border:1px solid var(--line); border-radius:12px; background:var(--surface) }
+      .card .head{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between }
+      .card .body{ padding:12px 14px }
+      .chip{ font-size:12px; color:var(--muted); padding:2px 8px; border:1px solid var(--line); border-radius:999px }
+      .list-row{ display:flex; align-items:center; gap:10px; padding:8px 0 }
+    }
+
+    /* ===== Mobile Dock (home 그대로) ===== */
+    .dock{ display:none }
+    @media (max-width:1023.98px){
+      .dock{
+        display:block;
+        position:fixed; left:0; right:0; bottom:0;
+        z-index:60;
+        height:var(--dock-h);
+        padding-bottom:var(--safe-bottom);
+        border-top:1px solid var(--line);
+        background:rgba(10,11,14,.92);
+        color:var(--muted);
+        box-shadow:0 -10px 26px rgba(0,0,0,.35);
+        backdrop-filter:blur(18px) saturate(160%);
+        -webkit-backdrop-filter:blur(18px) saturate(160%);
+        transform:translateZ(0);
+        transition:transform var(--speed), background var(--speed), border-color var(--speed);
+      }
+      :root[data-theme="light"] .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+      .with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+      .dock .row{
+        height:var(--dock-h);
+        display:flex;
+        justify-content:space-around;
+        align-items:center;
+        padding:0 12px;
+        gap:4px;
+      }
+      .dock a{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:4px;
+        padding:8px 12px;
+        min-width:56px;
+        border-radius:14px;
+        color:inherit;
+        transition: background var(--speed), color var(--speed), transform var(--speed);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .dock a:active{ transform:scale(.97); }
+      .dock a.active,
+      .dock a:hover{
+        background:var(--elev);
+        transform:translateY(-1px);
+        color:var(--text);
+      }
+      .dock .label{ font-size:11px; color:inherit }
+    }
+    @media (max-width:1023.98px) and (prefers-color-scheme: light){
+      :root:not([data-theme="dark"]) .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+    }
+
+    /* ===== Footer (home 그대로) ===== */
+    .footer{
+      position:fixed; left:0; right:0; bottom:0; height:var(--footer-h);
+      border-top:1px solid var(--line); background:var(--surface); color:#9AA3AE;
+      z-index:50;
+    }
+    .footer .row{
+      max-width:1920px; margin:0 auto; height:100%;
+      padding:0 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    @media (max-width:1023.98px){ .footer{ display:none } }
+
+    /* ===== Notifications center ===== */
+    .noti-root.with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+
+    .n-top{ display:flex; align-items:center; gap:8px; padding:10px 12px;
+      border:1px solid var(--line); border-radius:12px; background:var(--surface); position:sticky; top:0; z-index:10; }
+    .n-top .title{ font-weight:800; margin-right:auto }
+    .tabs{ display:flex; gap:6px; flex-wrap:wrap }
+    .tab{ padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:var(--elev); font-weight:700; font-size:12px }
+    .tab.active{ background:var(--brand); border-color:transparent; color:#fff }
+    .btn{ padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:var(--elev); color:var(--text); font-weight:700 }
+
+    .nlist{ margin-top:12px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--surface) }
+    .nitem{ display:grid; grid-template-columns:auto 1fr auto; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line); cursor:pointer }
+    .nitem:last-child{ border-bottom:0 }
+    .nitem:hover{ background:var(--elev) }
+    .ava{ width:40px; height:40px; border-radius:50%; background:#D1D5DB; display:grid; place-items:center; font-weight:800; }
+    .ic{ width:40px; height:40px; border-radius:50%; border:1px solid var(--line); background:var(--elev); display:grid; place-items:center; }
+    .meta{ color:var(--muted); font-size:12px }
+    .strong{ font-weight:800 }
+    .act{ display:flex; gap:6px; align-items:center }
+    .badge{ width:8px; height:8px; border-radius:50%; background:var(--brand) }
+    .time{ color:var(--muted); font-size:12px; margin-left:8px }
+    .pill{ padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:var(--elev); font-weight:700; font-size:12px }
+
+    .empty{ padding:28px 16px; color:var(--muted); text-align:center; border:1px dashed var(--line); border-radius:12px; margin-top:12px }
+    .more{ display:block; width:100%; text-align:center; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-top:12px }
+
+    /* Active tab helper */
+    .nav a[data-tab="noti"].active,
+    .dock a[data-tab="noti"].active{ background:var(--elev) }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- ===== Mobile Top ===== -->
+    <div class="m-top" role="navigation" aria-label="상단 바(모바일)">
+      <div class="m-left"><div class="avatar" title="내 프로필"></div></div>
+      <div class="m-center"><div class="brand" aria-label="LOOMA 로고">LOOMA</div></div>
+      <div class="m-right">
+        <!-- 동일 UI 유지를 위해 알림 아이콘 유지 -->
+        <a href="notifications.html" aria-label="알림" data-nav class="notif-link">
+          <i class="ri-notification-3-line"></i>
+          <span class="notif-badge hidden" data-notif-count></span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ===== Main grid ===== -->
+    <main class="main">
+      <!-- Sidebar (home 그대로) -->
+      <aside class="sidebar" aria-label="사이드바 내비게이션">
+        <div class="side-head"><div class="side-brand">LOOMA</div></div>
+
+        <div class="me-card hidden" title="내 계정" id="sidebarSigned">
+          <div class="avatar" id="sidebarAvatar"></div>
+          <div>
+            <div class="name" id="sidebarName">회원명</div>
+            <div class="id" id="sidebarHandle">@handle</div>
+          </div>
+          <button class="icon-btn" id="btnLogout" aria-label="로그아웃" title="로그아웃"><i class="ri-logout-circle-line"></i></button>
+        </div>
+        <div class="me-card hidden" id="sidebarGuest">
+          <div>
+            <div class="name">Guest</div>
+            <div class="id muted" style="font-size:12px">로그인하고 더 많은 기능을 이용하세요</div>
+          </div>
+          <button class="icon-btn" data-go="login" aria-label="로그인" title="로그인"><i class="ri-login-circle-line"></i></button>
+        </div>
+
+        <nav class="nav" id="sideNav">
+          <a href="home.html" data-nav data-tab="home"><i class="ri-home-5-line icon"></i><span class="label">홈</span></a>
+          <a href="explore.html" data-nav data-tab="explore"><i class="ri-compass-3-line icon"></i><span class="label">탐색</span></a>
+          <a href="notifications.html" data-nav data-tab="noti" class="active notif-nav"><i class="ri-notification-3-line icon"></i><span class="label">알림</span><span class="notif-badge hidden" data-notif-count></span></a>
+          <a href="messages.html" data-nav data-tab="messages"><i class="ri-chat-3-line icon"></i><span class="label">메시지</span></a>
+          <a href="profile.html" data-nav data-tab="profile"><i class="ri-user-3-line icon"></i><span class="label">프로필</span></a>
+          <a href="settings.html" data-nav data-tab="settings"><i class="ri-settings-3-line icon"></i><span class="label">설정</span></a>
+        </nav>
+      </aside>
+
+      <!-- ===== Center: Notifications ===== -->
+      <section class="container noti-root with-dock-pad">
+        <!-- 상단 바: 제목/탭/새로고침 -->
+        <div class="n-top">
+          <div class="title">알림</div>
+          <div class="tabs" role="tablist" aria-label="알림 필터">
+            <button class="tab active" data-scope="all" aria-selected="true">전체</button>
+            <button class="tab" data-scope="comment">댓글</button>
+            <button class="tab" data-scope="follow">팔로우</button>
+          </div>
+          <button class="btn" id="btnRefresh"><i class="ri-refresh-line" style="margin-right:6px"></i>새로고침</button>
+        </div>
+
+        <!-- 알림 리스트 -->
+        <div class="nlist" id="nlist"></div>
+
+        <!-- 비어있을 때 -->
+        <div class="empty hidden" id="nempty">아직 표시할 알림이 없어요.</div>
+
+        <!-- 더 보기 -->
+        <button class="more" id="btnMore">더 보기</button>
+      </section>
+
+      <!-- Right rail -->
+      <aside class="rrail" aria-label="오른쪽 영역">
+        <div class="card">
+          <div class="head"><strong>알림 팁</strong></div>
+          <div class="body">
+            <div class="list-row">• 댓글 알림은 이곳에서 확인할 수 있어요.</div>
+            <div class="list-row">• 팔로우 알림은 새 이웃을 빠르게 살펴보는 데 활용하세요.</div>
+            <div class="list-row">• 잠시 후에 다시 들어오면 새 알림이 자동으로 정리됩니다.</div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- ===== Footer (고정) ===== -->
+    <footer class="footer" role="contentinfo">
+      <div class="row">
+        <div>© 2025 LOOMA. All rights reserved.</div>
+        <div style="display:flex; gap:12px">
+          <a class="muted" href="terms.html" data-nav>이용 약관</a>
+          <a class="muted" href="privacy.html" data-nav>개인정보 처리방침</a>
+          <a class="muted" href="https://luminarylabs.netlify.app" target="_blank" rel="noopener noreferrer">Luminary Labs 소개</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ===== Mobile Dock (home 그대로) ===== -->
+    <nav class="dock" role="navigation" aria-label="하단 메뉴(모바일)">
+      <div class="row" id="dockNav">
+        <a href="home.html" data-nav data-tab="home"><i class="ri-home-5-line"></i><span class="label">홈</span></a>
+        <a href="explore.html" data-nav data-tab="explore"><i class="ri-compass-3-line"></i><span class="label">탐색</span></a>
+        <a href="messages.html" data-nav data-tab="messages"><i class="ri-chat-3-line"></i><span class="label">메시지</span></a>
+        <a href="profile.html" data-nav data-tab="profile"><i class="ri-user-3-line"></i><span class="label">프로필</span></a>
+        <a href="settings.html" data-nav data-tab="settings"><i class="ri-settings-3-line"></i><span class="label">설정</span></a>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    /* ===== 부드러운 네비 전환 ===== */
+    document.querySelectorAll('a[data-nav]').forEach(a=>{
+      const href=a.getAttribute('href')||'';
+      a.addEventListener('click',(e)=>{
+        if(!href || href.startsWith('#') || href.startsWith('http')) return;
+        e.preventDefault();
+        if(document.startViewTransition){ document.startViewTransition(()=> location.href=href); }
+        else{ document.body.style.opacity='0'; setTimeout(()=> location.href=href, 140); }
+      });
+    });
+    // 현재 탭 강조
+    document.querySelectorAll('.nav a[data-tab], .dock a[data-tab]').forEach(a=>{
+      a.classList.toggle('active', a.dataset.tab==='noti');
+    });
+
+    const $ = (selector, scope = document) => scope.querySelector(selector);
+    const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
+    const SCOPE_MAP = { all: 'all', comment: 'comment', follow: 'follow' };
+    const PAGE_SIZE = 10;
+
+    const elements = {
+      sidebarSigned: $('#sidebarSigned'),
+      sidebarGuest: $('#sidebarGuest'),
+      sidebarName: $('#sidebarName'),
+      sidebarHandle: $('#sidebarHandle'),
+      sidebarAvatar: $('#sidebarAvatar'),
+      sidebarLogout: $('#btnLogout'),
+      btnAuthAction: $('#btnAuthAction'),
+      mobileAvatar: document.querySelector('.m-left .avatar'),
+      btnRefresh: $('#btnRefresh'),
+      btnMore: $('#btnMore'),
+      list: $('#nlist'),
+      empty: $('#nempty'),
+    };
+
+    const state = {
+      scope: 'all',
+      page: 1,
+      loading: false,
+      notifications: [],
+      session: null,
+    };
+
+    if (elements.sidebarGuest) {
+      elements.sidebarGuest.classList.add('hidden');
+    }
+
+    function fetchJSON(path, { method = 'GET', body, headers } = {}) {
+      const options = {
+        method,
+        credentials: 'include',
+        headers: {
+          ...(body !== undefined && !(body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
+          ...(headers || {}),
+        },
+      };
+      if (body !== undefined) {
+        options.body = body instanceof FormData ? body : JSON.stringify(body);
+      }
+      return fetch(path, options).then(async (res) => {
+        const contentType = res.headers.get('content-type') || '';
+        const payload = contentType.includes('application/json')
+          ? await res.json().catch(() => null)
+          : await res.text().catch(() => null);
+        if (!res.ok) {
+          const err = new Error(typeof payload === 'string' ? payload : 'Request failed');
+          err.status = res.status;
+          err.data = payload;
+          throw err;
+        }
+        return payload;
+      });
+    }
+
+    function applyAvatar(element, url, fallback) {
+      if (!element) return;
+      if (url) {
+        const safe = String(url).replace(/"/g, '%22').replace(/'/g, '%27');
+        element.style.backgroundImage = `url(\"${safe}\")`;
+        element.textContent = '';
+      } else {
+        element.style.backgroundImage = '';
+        const text = (fallback || '').replace(/^@/, '').trim();
+        element.textContent = text ? text.charAt(0).toUpperCase() : '';
+      }
+    }
+
+    function applySession(user) {
+      if (user) {
+        elements.sidebarSigned?.classList.remove('hidden');
+        if (elements.sidebarGuest) {
+          elements.sidebarGuest.classList.add('hidden');
+          elements.sidebarGuest.setAttribute('aria-hidden', 'true');
+          elements.sidebarGuest.remove();
+          elements.sidebarGuest = null;
+        }
+        if (elements.sidebarName) elements.sidebarName.textContent = user.name || user.handle || '회원';
+        if (elements.sidebarHandle) elements.sidebarHandle.textContent = user.handle || '';
+        applyAvatar(elements.sidebarAvatar, user.avatarUrl || null, user.name || user.handle || 'U');
+        applyAvatar(elements.mobileAvatar, user.avatarUrl || null, user.name || user.handle || 'U');
+        elements.btnAuthAction?.classList.add('hidden');
+      } else {
+        elements.sidebarSigned?.classList.add('hidden');
+        elements.sidebarGuest?.classList.remove('hidden');
+        if (elements.sidebarName) elements.sidebarName.textContent = '회원명';
+        if (elements.sidebarHandle) elements.sidebarHandle.textContent = '@handle';
+        applyAvatar(elements.sidebarAvatar, null, 'G');
+        applyAvatar(elements.mobileAvatar, null, 'G');
+        elements.btnAuthAction?.classList.remove('hidden');
+      }
+    }
+
+    async function loadSession() {
+      try {
+        const res = await fetchJSON('/api/session');
+        state.session = res?.user || null;
+        if (!state.session) {
+          location.href = 'auth.html';
+          return false;
+        }
+        applySession(state.session);
+        return true;
+      } catch (err) {
+        location.href = 'auth.html';
+        return false;
+      }
+    }
+
+    function iconFor(type) {
+      switch (type) {
+        case 'comment':
+          return 'ri-chat-1-line';
+        case 'follow':
+          return 'ri-user-follow-line';
+        case 'admin-action':
+          return 'ri-shield-keyhole-line';
+        default:
+          return 'ri-notification-3-line';
+      }
+    }
+
+    function truncate(text, len = 80) {
+      if (!text) return '';
+      return text.length > len ? `${text.slice(0, len - 1)}…` : text;
+    }
+
+    function textForNotification(notif) {
+      if (!notif) return '새 알림이 도착했습니다.';
+      switch (notif.type) {
+        case 'comment': {
+          const snippet = truncate(String(notif?.payload?.text || '').trim(), 80);
+          return snippet ? `댓글: “${snippet}”` : '게시물에 댓글을 남겼어요.';
+        }
+        case 'follow':
+          return '당신을 팔로우하기 시작했어요.';
+        case 'admin-action': {
+          const title = notif.payload?.title || '관리 조치 안내';
+          const reason = notif.payload?.reason ? `사유: ${notif.payload.reason}` : '';
+          const detail = notif.payload?.detail ? `상세: ${notif.payload.detail}` : '';
+          const advisory = notif.payload?.advisory || '커뮤니티 가이드를 준수해 주세요.';
+          return [title, reason, detail, advisory].filter(Boolean).join(' · ');
+        }
+        default:
+          return '새 알림이 도착했습니다.';
+      }
+    }
+
+    function formatTime(iso) {
+      if (!iso) return '';
+      const ts = Date.parse(iso);
+      if (!Number.isFinite(ts)) return '';
+      const s = Math.floor((Date.now() - ts) / 1000);
+      if (s < 5) return '방금 전';
+      if (s < 60) return `${s}초 전`;
+      const m = Math.floor(s / 60);
+      if (m < 60) return `${m}분 전`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return `${h}시간 전`;
+      const d = Math.floor(h / 24);
+      if (d < 7) return `${d}일 전`;
+      const date = new Date(ts);
+      return date.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+    }
+
+    function renderNotificationItem(notif) {
+      const isAdminAlert = notif.type === 'admin-action';
+      const actorName = isAdminAlert ? '관리팀 안내' : (notif.actor?.name || notif.actor?.handle || '알 수 없음');
+      const actorHandle = isAdminAlert ? '' : (notif.actor?.handle || '');
+      const message = textForNotification(notif);
+      const timeLabel = formatTime(notif.createdAt);
+      return `
+        <div class="nitem" data-id="${notif.id}" data-type="${notif.type}">
+          <div class="ic"><i class="${iconFor(notif.type)}"></i></div>
+          <div>
+            <div><span class="strong">${actorName}</span>${actorHandle ? ` <span class="meta">${actorHandle}</span>` : ''}</div>
+            <div>${message}</div>
+            <div class="meta">${timeLabel}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderNotifications(message) {
+      if (message) {
+        elements.list.innerHTML = '';
+        elements.empty.textContent = message;
+        elements.empty.classList.remove('hidden');
+        elements.btnMore?.classList.add('hidden');
+        return;
+      }
+      const items = state.notifications;
+      elements.list.innerHTML = items.map((item) => renderNotificationItem(item)).join('');
+      elements.empty.classList.toggle('hidden', items.length > 0);
+      const limit = state.page * PAGE_SIZE;
+      const hasMore = items.length === limit;
+      elements.btnMore?.classList.toggle('hidden', !hasMore);
+    }
+
+    async function loadNotifications() {
+      if (state.loading) return;
+      state.loading = true;
+      try {
+        const limit = state.page * PAGE_SIZE;
+        const res = await fetchJSON(`/api/notifications?type=${SCOPE_MAP[state.scope]}&limit=${limit}`);
+        state.notifications = Array.isArray(res?.notifications) ? res.notifications : [];
+        renderNotifications();
+        window.dispatchEvent(new CustomEvent('looma:notifications-read'));
+      } catch (err) {
+        if (err?.status === 401) {
+          location.href = 'auth.html';
+          return;
+        }
+        if (err?.status === 501) {
+          state.notifications = [];
+          renderNotifications(err?.data?.message || '알림 기능이 아직 구성되지 않았습니다.');
+        } else {
+          state.notifications = [];
+          renderNotifications('알림을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        }
+      } finally {
+        state.loading = false;
+      }
+    }
+
+    function resetPaging() {
+      state.page = 1;
+    }
+
+    $$('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const scope = tab.dataset.scope || 'all';
+        if (state.scope === scope) return;
+        $$('.tab').forEach((btn) => btn.classList.remove('active'));
+        tab.classList.add('active');
+        state.scope = scope;
+        resetPaging();
+        loadNotifications();
+      });
+    });
+
+    elements.btnRefresh?.addEventListener('click', () => {
+      if (state.loading) return;
+      resetPaging();
+      loadNotifications();
+    });
+
+    elements.btnMore?.addEventListener('click', () => {
+      if (state.loading) return;
+      state.page += 1;
+      loadNotifications();
+    });
+
+    elements.btnAuthAction?.addEventListener('click', () => {
+      location.href = 'auth.html';
+    });
+
+    elements.sidebarLogout?.addEventListener('click', async () => {
+      try {
+        await fetchJSON('/api/logout', { method: 'POST', body: {} });
+      } catch (err) {
+        console.error(err);
+      }
+      location.href = 'auth.html';
+    });
+
+    (async function init() {
+      const ok = await loadSession();
+      if (!ok) return;
+      await loadNotifications();
+    })();
+  </script>
+</body>
+</html> 

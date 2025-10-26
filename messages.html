@@ -1,0 +1,1886 @@
+<!doctype html>
+<html lang="ko" data-theme="auto">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Looma — Messages</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Peta:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet"/>
+
+  <!-- PWA feel -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0A0A0A">
+  <script>
+    (function(){
+      try{
+        var root = document.documentElement;
+        var theme = localStorage.getItem('looma:theme');
+        if(theme !== 'light' && theme !== 'dark'){ theme = 'auto'; }
+        if(theme === 'auto'){ root.removeAttribute('data-theme'); }
+        else{ root.setAttribute('data-theme', theme); }
+        root.dataset.themePreference = theme;
+      }catch(err){
+        /* ignore */
+      }
+    })();
+  </script>
+  <script src="theme.js"></script>
+  <script src="notify-badge.js" defer></script>
+
+  <style>
+    :root{
+      --bg:#0A0A0A; --surface:#111213; --elev:#151618; --line:#1E2023;
+      --text:#EDEFF2; --muted:#9AA3AE; --brand:#0EA5E9;
+      --radius:12px; --shadow:0 6px 16px rgba(0,0,0,.16); --speed:.18s;
+      --dock-h:64px; --footer-h:44px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+        --text:#0B1220; --muted:#596174; --brand:#0077FF;
+        --shadow:0 10px 20px rgba(10,16,30,.06);
+      }
+    }
+    *{ box-sizing:border-box }
+    html, body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    a{ color:inherit; text-decoration:none }
+    button{ font:inherit; background:none; border:0; color:inherit; cursor:pointer }
+    input, textarea, select{
+      color:inherit; background:transparent; border:1px solid var(--line);
+      border-radius:10px; padding:10px 12px;
+    }
+
+    .notif-link{ position:relative; display:inline-flex; }
+    .notif-nav{ position:relative; }
+    .notif-badge{
+      position:absolute;
+      top:-4px;
+      right:-4px;
+      min-width:16px;
+      height:16px;
+      padding:0 4px;
+      border-radius:999px;
+      background:#ef4444;
+      color:#fff;
+      font-size:10px;
+      font-weight:700;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .notif-badge.hidden{ display:none !important; }
+    .hidden{ display:none !important }
+
+    .app{ min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
+
+    /* ===== View Transitions (home.html과 동일 톤) ===== */
+    @keyframes vtFadeInDesktop{
+      0%{ opacity:0; transform:translate3d(36px,0,0) scale(.985); }
+      100%{ opacity:1; transform:none; }
+    }
+    @keyframes vtFadeOutDesktop{
+      0%{ opacity:1; transform:none; }
+      100%{ opacity:0; transform:translate3d(-28px,0,0) scale(.985); }
+    }
+    @keyframes vtFadeInMobile{
+      0%{ opacity:0; transform:translate3d(0,40px,0) scale(.985); }
+      100%{ opacity:1; transform:none; }
+    }
+    @keyframes vtFadeOutMobile{
+      0%{ opacity:1; transform:none; }
+      100%{ opacity:0; transform:translate3d(0,-32px,0) scale(.985); }
+    }
+    @media (min-width:1024px){
+      ::view-transition-old(root){
+        animation: vtFadeOutDesktop .36s cubic-bezier(.22,.61,.36,1) both;
+      }
+      ::view-transition-new(root){
+        animation: vtFadeInDesktop .36s cubic-bezier(.16,.84,.44,1) both;
+      }
+    }
+    @media (max-width:1023.98px){
+      ::view-transition-old(root){
+        animation: vtFadeOutMobile .34s cubic-bezier(.25,.8,.25,1) both;
+      }
+      ::view-transition-new(root){
+        animation: vtFadeInMobile .34s cubic-bezier(.16,.84,.44,1) both;
+      }
+    }
+    @media (prefers-reduced-motion: reduce){
+      ::view-transition-old(root),
+      ::view-transition-new(root){
+        animation: none !important;
+      }
+    }
+
+    /* ===== Mobile TopBar (home 동일) ===== */
+    .m-top{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-bottom:1px solid var(--line); background:var(--surface);
+      position:sticky; top:0; z-index:20;
+    }
+    .m-left{ display:flex; align-items:center; gap:10px }
+    .m-center{ position:absolute; left:50%; transform:translateX(-50%); pointer-events:none }
+    .m-right{ display:flex; align-items:center; gap:8px }
+    .brand{ font-family:"Lexend Peta"; font-weight:800; letter-spacing:.4px; color:var(--text) }
+    .avatar{
+      width:28px; height:28px; aspect-ratio:1/1; border-radius:50%; background:#D1D5DB;
+      flex:0 0 28px; display:flex; align-items:center; justify-content:center;
+      background-position:center; background-size:cover; background-repeat:no-repeat;
+      font-weight:700; font-size:12px; color:#fff; text-transform:uppercase;
+    }
+    .icon-btn{
+      width:32px; height:32px; border-radius:50%;
+      border:1px solid var(--line); background:var(--elev);
+      display:inline-flex; align-items:center; justify-content:center;
+      transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .icon-btn i{ font-size:16px; line-height:1; }
+    .icon-btn:hover{ background:var(--brand); border-color:transparent; color:#fff; transform:translateY(-1px); }
+    @media (min-width:1024px){ .m-top{ display:none } }
+
+    /* ===== Main Grid (home 동일) ===== */
+    .main{ display:grid; gap:16px; grid-template-columns:1fr; padding:16px }
+    @media (min-width:1024px){ .main{ grid-template-columns:260px 1fr 320px; padding-bottom:calc(var(--footer-h) + 8px) } }
+    .container{ max-width:unset; width:100%; margin:0 auto }
+
+    /* ===== Sidebar (home 그대로) ===== */
+    .sidebar{ display:none }
+    @media (min-width:1024px){
+      .sidebar{
+        display:flex; flex-direction:column; gap:14px;
+        border-right:1px solid var(--line); padding:20px 12px 20px 0;
+      }
+      .side-head{ padding:0 8px }
+      .side-brand{ font-family:"Lexend Peta"; font-weight:800; font-size:18px }
+      .me-card{
+        display:flex; align-items:center; gap:10px; padding:10px;
+        border:1px solid var(--line); border-radius:12px; background:var(--surface);
+        background-image: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.03));
+      }
+      .me-card .name{ font-weight:600 }
+      .me-card .id{ color:var(--muted); font-size:12px }
+
+      .nav{ display:flex; flex-direction:column; gap:6px; margin-top:4px }
+      .nav a{
+        display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+        border:1px solid transparent; transition: background var(--speed), border-color var(--speed);
+      }
+      .nav a:hover{ background:var(--elev); border-color:var(--line) }
+      .nav a.active{ background:var(--elev); border-color:var(--line) }
+      .nav .icon{ font-size:18px } .nav .label{ font-weight:600 }
+    }
+
+    /* ===== Right rail (home 그대로) ===== */
+    .rrail{ display:none }
+    @media (min-width:1024px){
+      .rrail{ display:flex; flex-direction:column; gap:12px; padding-left:12px }
+      .card{ border:1px solid var(--line); border-radius:12px; background:var(--surface) }
+      .card .head{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between }
+      .card .body{ padding:12px 14px }
+      .chip{ font-size:12px; color:var(--muted); padding:2px 8px; border:1px solid var(--line); border-radius:999px }
+    }
+
+    /* ===== Mobile Dock (home 그대로) ===== */
+    .dock{ display:none }
+    @media (max-width:1023.98px){
+      .dock{
+        display:block;
+        position:fixed; left:0; right:0; bottom:0;
+        z-index:60;
+        height:var(--dock-h);
+        padding-bottom:var(--safe-bottom);
+        border-top:1px solid var(--line);
+        background:rgba(10,11,14,.92);
+        color:var(--muted);
+        box-shadow:0 -10px 26px rgba(0,0,0,.35);
+        backdrop-filter:blur(18px) saturate(160%);
+        -webkit-backdrop-filter:blur(18px) saturate(160%);
+        transform:translateZ(0);
+        transition:transform var(--speed), background var(--speed), border-color var(--speed);
+      }
+      :root[data-theme="light"] .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+      .with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+      .dock .row{
+        height:var(--dock-h);
+        display:flex;
+        justify-content:space-around;
+        align-items:center;
+        padding:0 12px;
+        gap:4px;
+      }
+      .dock a{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:4px;
+        padding:8px 12px;
+        min-width:56px;
+        border-radius:14px;
+        color:inherit;
+        transition: background var(--speed), color var(--speed), transform var(--speed);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .dock a:active{ transform:scale(.97); }
+      .dock a.active,
+      .dock a:hover{
+        background:var(--elev);
+        transform:translateY(-1px);
+        color:var(--text);
+      }
+      .dock .label{ font-size:11px; color:inherit }
+    }
+    @media (max-width:1023.98px) and (prefers-color-scheme: light){
+      :root:not([data-theme="dark"]) .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+    }
+
+    /* ===== Footer (home 그대로) ===== */
+    .footer{
+      position:fixed; left:0; right:0; bottom:0; height:var(--footer-h);
+      border-top:1px solid var(--line); background:var(--surface); color:#9AA3AE;
+      z-index:50;
+    }
+    .footer .row{
+      max-width:1920px; margin:0 auto; height:100%;
+      padding:0 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    @media (max-width:1023.98px){ .footer{ display:none } }
+
+    /* ===== Messages Center ===== */
+    .messages-root.with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+    .messages-grid{
+      display:grid; gap:12px;
+      grid-template-columns: 1fr; /* mobile: chat only */
+    }
+    @media (min-width:1024px){
+      .messages-grid{
+        grid-template-columns: 320px 1fr; /* desktop: channel list + chat */
+      }
+    }
+    #chanPanel{ display:none; }
+    @media (min-width:1024px){
+      #chanPanel{ display:flex; flex-direction:column; }
+    }
+    .panel{
+      border:1px solid var(--line); border-radius:12px; background:var(--surface);
+    }
+    .mobile-only{ display:none !important; }
+    @media (max-width:1023.98px){
+      .mobile-only{ display:inline-flex !important; }
+    }
+
+    .page-head{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+      padding:18px 20px; margin-bottom:16px;
+      border:1px solid var(--line); border-radius:14px; background:var(--surface);
+    }
+    .page-head h1{
+      margin:0; font-size:24px; font-weight:800; letter-spacing:-.01em;
+    }
+    .page-head p{ margin:6px 0 0; color:var(--muted); font-size:13px; max-width:520px }
+    .page-actions{ display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px }
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:8px 14px; border-radius:999px;
+      border:1px solid var(--line); background:var(--elev);
+      font-weight:600; transition: background var(--speed), border-color var(--speed), color var(--speed), transform var(--speed);
+    }
+    .pill i{ font-size:16px }
+    .pill:hover{ background:var(--brand); color:#fff; border-color:transparent; transform:translateY(-1px) }
+    .pill.brand{ background:var(--brand); border-color:transparent; color:#fff; box-shadow:0 6px 16px rgba(14,165,233,.32) }
+    .pill.brand:hover{ background:#0284C7; box-shadow:0 10px 22px rgba(2,132,199,.32) }
+    @media (max-width:767.98px){
+      .page-head{ flex-direction:column }
+      .page-actions{ width:100%; justify-content:flex-start }
+    }
+
+    /* Channel list */
+    .chanhead{
+      padding:12px 16px; border-bottom:1px solid var(--line);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    }
+    .chanhead strong{ font-size:15px }
+    .chanhead .cmeta{ margin-top:6px }
+    .chanlist{
+      max-height:calc(100dvh - 220px); overflow:auto;
+      padding:12px; display:flex; flex-direction:column; gap:10px;
+    }
+    .ch-section{ display:flex; flex-direction:column; gap:6px }
+    .ch-title{
+      font-weight:800; font-size:12px; letter-spacing:.2px;
+      text-transform:uppercase; color:var(--muted); padding:0 4px;
+    }
+    .square-card{
+      position:relative; overflow:hidden;
+      padding:18px 16px; border-radius:14px;
+      border:1px solid var(--line);
+      display:flex; flex-direction:column; align-items:flex-start; gap:10px;
+      background:linear-gradient(135deg, rgba(14,165,233,.18), rgba(14,165,233,0));
+      cursor:pointer; transition: border-color var(--speed), transform var(--speed), box-shadow var(--speed);
+    }
+    .square-card:hover{ border-color:rgba(14,165,233,.6); transform:translateY(-1px) }
+    .square-card.active{ border-color:rgba(14,165,233,.6); box-shadow:0 0 0 1px rgba(14,165,233,.3) }
+    .square-card .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:12px; font-weight:700; padding:4px 10px;
+      border-radius:999px; color:var(--brand); background:rgba(14,165,233,.16);
+    }
+    .square-card .headline{ font-size:18px; font-weight:800; letter-spacing:-.01em }
+    .square-card p{ margin:0; color:var(--muted); font-size:13px }
+    .square-card .meta{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted) }
+
+    .chanlist .chan{ border:1px solid transparent }
+    .chanlist .chan:not(.square-card){
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:12px;
+      cursor:pointer;
+      transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .chanlist .chan:not(.square-card):hover{ background:var(--elev); border-color:var(--line); transform:translateY(-1px) }
+    .chanlist .chan:not(.square-card).active{ background:var(--elev); border-color:var(--line) }
+    .chanlist .chan .name{ font-weight:700; font-size:14px }
+    .chanlist .chan .sub{
+      color:var(--muted); font-size:12px;
+      display:flex; align-items:center; gap:6px;
+    }
+    .chanlist .chan .sub span + span::before{
+      content:'·'; margin-right:6px; color:var(--line);
+    }
+    .chanlist .chan .stack{ min-width:0; display:flex; flex-direction:column; gap:2px }
+    .cava{
+      width:36px; height:36px; border-radius:50%; background:#D1D5DB;
+      display:grid; place-items:center; font-weight:800; color:#0B1220;
+    }
+    .presence{ width:8px; height:8px; border-radius:50%; background:#22C55E; display:inline-block }
+    .presence.away{ background:#F97316 }
+    .presence.offline{ background:var(--line) }
+    .tag{
+      display:inline-flex; align-items:center; gap:4px;
+      padding:2px 8px; border-radius:999px;
+      font-size:11px; font-weight:600; background:var(--elev); color:var(--muted);
+    }
+    .tag.brand{ background:rgba(14,165,233,.16); color:var(--brand) }
+    .unread{
+      margin-left:auto; min-width:18px; height:18px; border-radius:9px;
+      background:var(--brand); color:#fff; font-size:12px;
+      display:grid; place-items:center; padding:0 6px;
+    }
+    .chan-empty{
+      border:1px dashed var(--line); border-radius:12px;
+      padding:16px; text-align:center; color:var(--muted); font-size:12px;
+    }
+    .chanfoot{
+      padding:10px 16px; border-top:1px solid var(--line);
+      font-size:12px; color:var(--muted); background:var(--surface);
+    }
+
+    /* Chat */
+    .chat{ display:grid; grid-template-rows:auto 1fr auto; height:100% }
+    .chead{ padding:12px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px }
+    .ctitle{ font-weight:800; font-size:16px }
+    .csub{ color:var(--muted); font-size:12px }
+    .cbody{ overflow:auto; padding:18px 16px; display:flex; flex-direction:column }
+    .day{ text-align:center; color:var(--muted); font-size:12px; margin:8px 0 }
+    .row{ display:flex; gap:8px; margin:8px 0; align-items:flex-end }
+    .row.me{ flex-direction:row-reverse }
+    .bubble-stack{ display:flex; flex-direction:column; gap:4px; max-width:min(72ch, 80%) }
+    .sender{ font-size:12px; font-weight:600; color:var(--muted); }
+    .row.me .sender{ align-self:flex-end; color:rgba(255,255,255,.75) }
+    .bub{ max-width:min(72ch, 80%); padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface) }
+    .row.me .bub{ background:var(--brand); color:#fff; border-color:transparent }
+    .stamp{ color:var(--muted); font-size:11px; margin:2px 6px }
+    .cbody::-webkit-scrollbar{ width:6px } .cbody::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.08); border-radius:4px }
+    .empty-chat{
+      margin:24px auto; padding:32px 24px; border-radius:12px;
+      border:1px dashed var(--line); max-width:420px; text-align:center;
+      display:grid; gap:8px; color:var(--muted); background:var(--surface);
+    }
+    .empty-chat strong{ font-size:16px; color:var(--text) }
+    .cinput{ border-top:1px solid var(--line); padding:12px 14px; display:flex; gap:10px; align-items:flex-end }
+    .cta{ flex:1; min-height:42px; max-height:160px; overflow:auto; resize:none }
+    .send{ min-width:90px; border-radius:10px; border:1px solid var(--line); background:var(--brand); color:#fff; font-weight:700 }
+
+    /* Modal */
+    .modal{
+      position:fixed; inset:0; display:none;
+      align-items:center; justify-content:center;
+      background:rgba(5,6,8,.52); z-index:200;
+    }
+    .modal.open{ display:flex }
+    .modal .panel{
+      width:min(520px, calc(100vw - 40px));
+      max-height:80dvh;
+      display:flex; flex-direction:column; gap:0;
+      box-shadow:var(--shadow);
+    }
+    .modal .head{
+      padding:18px 20px; border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .modal .body{
+      padding:16px 20px; overflow:auto; display:grid; gap:12px;
+    }
+    .modal .foot{
+      padding:16px 20px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:8px;
+    }
+    .modal .close-btn{
+      width:32px; height:32px; border-radius:50%;
+      border:1px solid var(--line); background:var(--surface);
+      display:grid; place-items:center;
+    }
+    .catalog-item{
+      border:1px solid var(--line); border-radius:12px;
+      padding:14px 16px; display:grid; gap:6px; background:var(--surface);
+      transition:border-color var(--speed), transform var(--speed);
+    }
+    .catalog-item:hover{ border-color:var(--brand); transform:translateY(-1px) }
+    .catalog-item strong{ font-size:15px }
+    .catalog-item p{ margin:0; font-size:13px; color:var(--muted) }
+    .catalog-meta{ font-size:12px; color:var(--muted); display:flex; gap:12px; flex-wrap:wrap }
+    .catalog-meta span{ display:inline-flex; align-items:center; gap:4px }
+    .catalog-meta i{ font-size:14px; color:var(--muted) }
+    .catalog-item .cava{
+      width:40px; height:40px; font-size:18px;
+      background:var(--elev); color:var(--text);
+    }
+    .catalog-tags{ display:flex; flex-wrap:wrap; gap:6px }
+    .catalog-actions{ display:flex; justify-content:flex-end }
+    .btn{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:8px 14px; border-radius:10px;
+      border:1px solid var(--line); background:var(--surface);
+      color:inherit; font-weight:600; cursor:pointer;
+      transition: background var(--speed), border-color var(--speed), color var(--speed);
+    }
+    .btn i{ font-size:16px }
+    .btn:hover{ border-color:var(--brand); color:var(--brand) }
+    .btn.primary{ background:var(--brand); border-color:transparent; color:#fff }
+    .btn.primary:hover{ background:#0284C7 }
+    .btn[disabled]{ opacity:.6; cursor:default; border-color:var(--line); color:var(--muted); background:var(--elev) }
+    .profile-link{ cursor:pointer }
+    @media (max-width:479.98px){
+      .modal .panel{ width:calc(100vw - 28px) }
+      .modal .body{ padding:16px }
+    }
+    .modal .field{ display:grid; gap:6px }
+    .modal .field label{ font-weight:600; font-size:13px }
+    .modal .field input{
+      padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+      background:var(--surface); color:inherit;
+    }
+    .modal .note{ color:var(--muted); font-size:12px }
+
+    .auth-guard{
+      display:none; align-items:center; justify-content:center;
+      padding:40px 20px; border:1px solid var(--line); border-radius:14px;
+      background:var(--surface); margin-bottom:16px; text-align:center;
+    }
+    .auth-guard.open{ display:flex }
+    .auth-guard .guard-panel{ display:grid; gap:12px; max-width:360px; width:100% }
+
+    /* Mobile: channel drawer */
+    .drawer{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; z-index:80 }
+    .drawer.open{ display:block }
+    .drawer .sheet{
+      position:absolute; left:0; top:0; bottom:0; width:min(86vw, 360px);
+      background:var(--surface); border-right:1px solid var(--line);
+      transform:translateX(-100%); transition: transform var(--speed);
+    }
+    .drawer.open .sheet{ transform:none }
+    @media (min-width:1024px){ .drawer{ display:none !important } }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- ===== Mobile Top: [avatar]  [LOOMA]  [bell/login] (home 동일) ===== -->
+    <div class="m-top" role="navigation" aria-label="상단 바(모바일)">
+      <div class="m-left"><button class="avatar" id="openDrawer" title="채널 열기"></button></div>
+      <div class="m-center"><div class="brand" aria-label="LOOMA 로고">LOOMA</div></div>
+      <div class="m-right">
+        <a href="notifications.html" aria-label="알림" data-nav class="notif-link"><i class="ri-notification-3-line"></i><span class="notif-badge hidden" data-notif-count></span></a>
+        <button class="icon-btn" id="btnAuthAction" aria-label="로그인" title="로그인"><i class="ri-login-circle-line"></i></button>
+      </div>
+    </div>
+
+    <!-- ===== Main grid (home 동일 좌우 레일) ===== -->
+    <main class="main">
+      <!-- Sidebar (home 그대로) -->
+      <aside class="sidebar" aria-label="사이드바 내비게이션">
+        <div class="side-head"><div class="side-brand">LOOMA</div></div>
+
+        <!-- home와 동일: 로그인/비로그인 카드 -->
+        <div class="me-card hidden" title="내 계정" id="sidebarSigned">
+          <div class="avatar"></div>
+          <div>
+            <div class="name" id="sidebarName">회원명</div>
+            <div class="id" id="sidebarHandle">@handle</div>
+          </div>
+          <button class="icon-btn" id="btnLogout" aria-label="로그아웃" title="로그아웃"><i class="ri-logout-circle-line"></i></button>
+        </div>
+        <div class="me-card" id="sidebarGuest">
+          <div>
+            <div class="name">Guest</div>
+            <div class="id muted" style="font-size:12px">로그인하고 더 많은 기능을 이용하세요</div>
+          </div>
+          <button class="icon-btn" data-go="login" aria-label="로그인" title="로그인"><i class="ri-login-circle-line"></i></button>
+        </div>
+
+        <nav class="nav" id="sideNav">
+          <a href="home.html" data-nav><i class="ri-home-5-line icon"></i><span class="label">홈</span></a>
+          <a href="explore.html" data-nav><i class="ri-compass-3-line icon"></i><span class="label">탐색</span></a>
+          <a href="notifications.html" data-nav class="notif-nav"><i class="ri-notification-3-line icon"></i><span class="label">알림</span><span class="notif-badge hidden" data-notif-count></span></a>
+          <a href="messages.html" data-nav><i class="ri-chat-3-line icon"></i><span class="label">메시지</span></a>
+          <a href="profile.html" data-nav><i class="ri-user-3-line icon"></i><span class="label">프로필</span></a>
+          <a href="settings.html" data-nav><i class="ri-settings-3-line icon"></i><span class="label">설정</span></a>
+        </nav>
+      </aside>
+
+      <!-- ===== Center: 메시지 인터페이스 (채널 + 채팅) ===== -->
+      <section class="container messages-root">
+        <header class="page-head">
+          <div>
+            <h1>메시지</h1>
+            <p>모두의 광장, 다이렉트 메시지, 그룹 채팅을 하나의 허브에서 관리해요.</p>
+          </div>
+          <div class="page-actions">
+            <button class="pill" id="btnCreateGroup"><i class="ri-add-circle-line"></i><span>새 그룹</span></button>
+            <button class="pill" id="btnStartDM"><i class="ri-mail-add-line"></i><span>새 다이렉트</span></button>
+            <button class="pill brand" id="btnBrowseGroups"><i class="ri-hashtag"></i><span>그룹 찾기</span></button>
+          </div>
+        </header>
+        <div class="auth-guard hidden" id="messagesGuard">
+          <div class="guard-panel">
+            <h2 style="margin:0">로그인이 필요합니다</h2>
+            <p class="cmeta" style="margin:0">메시지 기능은 회원만 이용할 수 있어요. 로그인하고 대화를 시작해 보세요.</p>
+            <div style="display:flex; gap:8px; justify-content:center">
+              <button class="btn primary" data-go="login" type="button"><i class="ri-login-circle-line"></i><span>로그인/가입</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="messages-grid" id="messagesGrid">
+          <!-- Channel list (desktop panel) -->
+          <aside class="panel" id="chanPanel" aria-label="채널 목록">
+            <div class="chanhead">
+              <div>
+                <strong>채널</strong>
+                <div class="cmeta" aria-hidden="true">대화 공간을 선택하거나 새 그룹에 합류하세요.</div>
+              </div>
+              <button class="icon-btn" id="btnBrowseGroupsIcon" title="그룹 둘러보기"><i class="ri-add-line"></i></button>
+            </div>
+            <div class="chanlist" id="chanList" aria-live="polite"></div>
+            <div class="chanfoot" role="note">그룹은 + 버튼 또는 상단의 그룹 찾기에서 관리할 수 있어요.</div>
+          </aside>
+
+          <!-- Chat panel -->
+          <section class="panel chat" aria-label="채팅">
+            <div class="chead">
+              <div>
+                <div class="ctitle" id="ctitle">모두의 광장</div>
+                <div class="csub" id="csub">Looma 전체 공개 채널</div>
+              </div>
+              <div style="margin-left:auto; display:flex; gap:6px">
+                <button class="icon-btn mobile-only" id="btnChannelPicker" title="채널 선택"><i class="ri-menu-unfold-line"></i></button>
+                <button class="icon-btn" id="btnLeaveGroup" title="그룹 나가기" style="display:none"><i class="ri-logout-box-r-line"></i></button>
+                <button class="icon-btn" id="btnSearch" title="검색"><i class="ri-search-line"></i></button>
+              </div>
+            </div>
+
+            <div class="cbody" id="cbody" aria-live="polite"></div>
+
+            <div class="cinput">
+              <textarea id="cta" class="cta" rows="1" placeholder="메시지 보내기(Shift+Enter 줄바꿈)"></textarea>
+              <button id="btnSend" class="send">보내기</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- Right rail (home 스타일 유지, 내용 안내) -->
+      <aside class="rrail" aria-label="오른쪽 영역">
+        <div class="card">
+          <div class="head"><strong>공지사항</strong></div>
+          <div class="body">
+            <div class="chip">메시지 저장 안내</div>
+            <p class="cmeta" style="margin-top:8px">안전한 커뮤니티를 위해 메시지가 서버에 저장됩니다.</p>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- ===== Footer (home 그대로) ===== -->
+    <footer class="footer" role="contentinfo">
+      <div class="row">
+        <div>© 2025 LOOMA. All rights reserved.</div>
+        <div style="display:flex; gap:12px">
+          <a class="muted" href="terms.html" data-nav>이용 약관</a>
+          <a class="muted" href="privacy.html" data-nav>개인정보 처리방침</a>
+          <a class="muted" href="https://luminarylabs.netlify.app" target="_blank" rel="noopener noreferrer">Luminary Labs 소개</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ===== Mobile Dock (home 그대로) ===== -->
+    <nav class="dock" role="navigation" aria-label="하단 메뉴(모바일)">
+      <div class="row" id="dockNav">
+        <a href="home.html" data-nav><i class="ri-home-5-line"></i><span class="label">홈</span></a>
+        <a href="explore.html" data-nav><i class="ri-compass-3-line"></i><span class="label">탐색</span></a>
+        <a href="messages.html" data-nav><i class="ri-chat-3-line"></i><span class="label">메시지</span></a>
+        <a href="profile.html" data-nav><i class="ri-user-3-line"></i><span class="label">프로필</span></a>
+        <a href="settings.html" data-nav><i class="ri-settings-3-line"></i><span class="label">설정</span></a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ===== Channel drawer (모바일용) ===== -->
+  <div class="drawer" id="drawer" aria-hidden="true">
+    <div class="sheet panel">
+      <div class="chanhead">
+        <div>
+          <strong>채널</strong>
+          <div class="cmeta" aria-hidden="true">원하는 대화방을 선택하세요.</div>
+        </div>
+        <button class="icon-btn" id="btnCloseDrawer" aria-label="닫기"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="chanlist" id="mChanList" aria-live="polite"></div>
+      <div class="chanfoot" role="note">그룹 관리 기능은 상단의 그룹 찾기에서도 이용할 수 있어요.</div>
+    </div>
+  </div>
+
+  <!-- ===== 메시지 알림 모달 ===== -->
+  <div class="modal" id="modal-messages-alert" aria-hidden="true" role="alertdialog" aria-label="메시지 알림">
+    <div class="panel">
+      <div class="head">
+        <strong id="messagesAlertTitle">알림</strong>
+        <button class="close-btn" type="button" data-close="modal-messages-alert" aria-label="닫기"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="body">
+        <p id="messagesAlertBody" class="note" style="margin:0"></p>
+      </div>
+      <div class="foot">
+        <button class="btn primary" type="button" data-close="modal-messages-alert">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 다이렉트 메시지 시작 모달 ===== -->
+  <div class="modal" id="modal-start-dm" aria-hidden="true" role="dialog" aria-label="새 다이렉트 메시지">
+    <div class="panel">
+      <form id="startDmForm">
+        <div class="head">
+          <strong>새 다이렉트 메시지</strong>
+          <button class="close-btn" type="button" data-close="modal-start-dm" aria-label="닫기"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="body">
+          <div class="field">
+            <label for="startDmHandle">상대 아이디</label>
+            <input id="startDmHandle" name="handle" type="text" placeholder="@사용자" autocomplete="off" required />
+          </div>
+          <p class="note">상대의 Looma 아이디를 입력하면 해당 사용자와의 다이렉트 채널을 생성합니다.</p>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" data-close="modal-start-dm">취소</button>
+          <button class="btn primary" type="submit" id="startDmSubmit"><i class="ri-mail-add-line"></i><span>대화 시작</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== 그룹 찾기 모달 ===== -->
+  <div class="modal" id="modal-groups" aria-hidden="true" role="dialog" aria-label="그룹 찾기">
+    <div class="panel">
+      <div class="head">
+        <strong>그룹 둘러보기</strong>
+        <button class="close-btn" type="button" data-close="modal-groups" aria-label="닫기"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="body">
+        <p class="cmeta" style="margin:0">모든 그룹 정보와 대화는 Supabase에 저장되고, 참여/탈퇴 상태가 즉시 동기화돼요.</p>
+        <div id="groupCatalog" style="display:grid; gap:10px"></div>
+      </div>
+      <div class="foot" style="display:flex; gap:8px; justify-content:space-between">
+        <button class="btn" type="button" id="btnModalCreateGroup"><i class="ri-add-circle-line"></i><span>새 그룹 만들기</span></button>
+        <button class="btn" type="button" data-close="modal-groups">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 새 그룹 생성 모달 ===== -->
+  <div class="modal" id="modal-create-group" aria-hidden="true" role="dialog" aria-label="새 그룹 만들기">
+    <div class="panel">
+      <form id="createGroupForm">
+        <div class="head">
+          <strong>새 그룹 만들기</strong>
+          <button class="close-btn" type="button" data-close="modal-create-group" aria-label="닫기"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="body" style="display:grid; gap:14px">
+          <div class="field">
+            <label for="createGroupName">그룹 이름</label>
+            <input id="createGroupName" name="name" type="text" maxlength="60" placeholder="예: 디자인 챕터" required />
+          </div>
+          <div class="field">
+            <label for="createGroupDesc">그룹 소개 (선택)</label>
+            <textarea id="createGroupDesc" name="desc" rows="3" maxlength="200" placeholder="그룹 목적이나 안내를 적어주세요."></textarea>
+          </div>
+          <div class="field">
+            <label for="createGroupTags">태그 (쉼표 구분, 최대 6개)</label>
+            <input id="createGroupTags" name="tags" type="text" placeholder="예: 디자인, UX, 리서치" />
+            <p class="note">태그는 그룹 탐색 시 보여집니다. # 기호 없이 입력해 주세요.</p>
+          </div>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" data-close="modal-create-group">취소</button>
+          <button class="btn primary" type="submit" id="createGroupSubmit"><i class="ri-add-circle-line"></i><span>그룹 생성</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js" defer></script>
+  <script>
+    (() => {
+      const $ = (selector, scope = document) => scope.querySelector(selector);
+      const state = {
+        user: null,
+        channels: [],
+        groups: [],
+        current: null,
+        messages: new Map(),
+        loadingMessages: false,
+      };
+      const elements = {
+        guard: $('#messagesGuard'),
+        grid: $('#messagesGrid'),
+        chanList: $('#chanList'),
+        mChanList: $('#mChanList'),
+        ctitle: $('#ctitle'),
+        csub: $('#csub'),
+        cbody: $('#cbody'),
+        textarea: $('#cta'),
+        sendBtn: $('#btnSend'),
+        drawer: $('#drawer'),
+        openDrawerBtn: $('#openDrawer'),
+        closeDrawerBtn: $('#btnCloseDrawer'),
+        startDM: $('#btnStartDM'),
+        createGroup: $('#btnCreateGroup'),
+        browseGroups: [$('#btnBrowseGroups'), $('#btnBrowseGroupsIcon')].filter(Boolean),
+        channelPicker: $('#btnChannelPicker'),
+        modalGroups: $('#modal-groups'),
+        groupCatalog: $('#groupCatalog'),
+        modalCreateGroup: $('#modal-create-group'),
+        createGroupForm: $('#createGroupForm'),
+        createGroupName: $('#createGroupName'),
+        createGroupSubmit: $('#createGroupSubmit'),
+        modalCreateGroupBtn: $('#btnModalCreateGroup'),
+        alertModal: $('#modal-messages-alert'),
+        alertTitle: $('#messagesAlertTitle'),
+        alertBody: $('#messagesAlertBody'),
+        startDmModal: $('#modal-start-dm'),
+        dmForm: $('#startDmForm'),
+        dmInput: $('#startDmHandle'),
+        dmSubmit: $('#startDmSubmit'),
+        leaveGroup: $('#btnLeaveGroup'),
+        sidebarSigned: $('#sidebarSigned'),
+        sidebarGuest: $('#sidebarGuest'),
+        sidebarAvatar: $('#sidebarSigned .avatar'),
+        sidebarName: $('#sidebarName'),
+        sidebarHandle: $('#sidebarHandle'),
+        btnAuthAction: $('#btnAuthAction'),
+        btnLogout: $('#btnLogout'),
+        mAvatar: $('#openDrawer'),
+      };
+      let sendingMessage = false;
+      const POLL_INTERVAL = 4000;
+      let pollTimer = null;
+      let pollActiveChannel = null;
+      let pollPending = false;
+
+      async function fetchJSON(path, { method = 'GET', body, headers } = {}) {
+        const res = await fetch(path, {
+          method,
+          credentials: 'include',
+          headers: {
+            ...(body ? { 'Content-Type': 'application/json' } : {}),
+            ...(headers || {}),
+          },
+          body: body ? JSON.stringify(body) : undefined,
+        });
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok) {
+          if (res.status === 204) return null;
+          return contentType.includes('application/json') ? res.json() : res.text();
+        }
+        const error = new Error('Request failed');
+        error.status = res.status;
+        if (contentType.includes('application/json')) {
+          error.data = await res.json().catch(() => null);
+        } else {
+          error.data = await res.text().catch(() => null);
+        }
+        throw error;
+      }
+
+      function stopChannelPolling() {
+        pollActiveChannel = null;
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
+        pollPending = false;
+      }
+
+      async function pollChannelOnce() {
+        const channelId = pollActiveChannel;
+        if (!channelId || pollPending || document.hidden) return;
+        const existing = state.messages.get(channelId) || [];
+        const last = existing[existing.length - 1];
+        const params = new URLSearchParams();
+        if (last?.createdAt) {
+          params.set('after', last.createdAt);
+        }
+        const query = params.toString();
+        pollPending = true;
+        try {
+          const data = await fetchJSON(
+            `/api/messages/channels/${encodeURIComponent(channelId)}/messages${query ? `?${query}` : ''}`,
+          );
+          if (pollActiveChannel !== channelId) return;
+          if (data?.channel) {
+            const idx = state.channels.findIndex((c) => c.id === data.channel.id);
+            if (idx >= 0) {
+              state.channels[idx] = { ...state.channels[idx], ...data.channel };
+            }
+          }
+          const incoming = Array.isArray(data?.messages) ? data.messages : [];
+          if (!incoming.length) return;
+          const list = state.messages.get(channelId) || [];
+          const seen = new Set(list.map((msg) => msg?.id).filter(Boolean));
+          let changed = false;
+          incoming.forEach((msg) => {
+            if (!msg || !msg.id || seen.has(msg.id)) return;
+            list.push(msg);
+            seen.add(msg.id);
+            changed = true;
+          });
+          if (changed) {
+            state.messages.set(channelId, list);
+            const channelMeta = state.channels.find((c) => c.id === channelId);
+            const tail = list[list.length - 1];
+            if (channelMeta && tail) {
+              channelMeta.lastMessageAt = tail.createdAt;
+              channelMeta.lastMessagePreview = tail.text?.slice(0, 120) || '';
+            }
+            if (state.current === channelId) {
+              renderChat();
+            }
+            renderChanLists();
+          }
+        } catch (err) {
+          if (err.status === 401) {
+            state.user = null;
+            setGuard(true);
+            updateNavUser(null);
+            stopChannelPolling();
+          } else if (err.status === 404) {
+            state.messages.delete(channelId);
+            stopChannelPolling();
+            loadChannels({ preserveCurrent: false }).catch(() => {});
+          } else {
+            console.error('message poll failed', err);
+          }
+        } finally {
+          pollPending = false;
+        }
+      }
+
+      function startChannelPolling(channelId) {
+        if (!channelId) {
+          stopChannelPolling();
+          return;
+        }
+        if (pollActiveChannel === channelId && pollTimer) return;
+        stopChannelPolling();
+        pollActiveChannel = channelId;
+        pollTimer = setInterval(() => {
+          if (!document.hidden) {
+            pollChannelOnce();
+          }
+        }, POLL_INTERVAL);
+      }
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && pollActiveChannel) {
+          pollChannelOnce();
+        }
+      });
+
+      function setAvatarBackground(el, user, fallbackLabel) {
+        if (!el) return;
+        const handle = user?.handle || (typeof fallbackLabel === 'string' && fallbackLabel.startsWith('@') ? fallbackLabel : '');
+        if (handle) {
+          el.dataset.profileHandle = handle;
+          el.classList.add('profile-link');
+        } else {
+          if (el.dataset && 'profileHandle' in el.dataset) delete el.dataset.profileHandle;
+          el.classList.remove('profile-link');
+        }
+        if (user?.avatarUrl) {
+          const safe = String(user.avatarUrl).replace(/"/g, '%22').replace(/'/g, '%27');
+          el.style.backgroundImage = `url("${safe}")`;
+          el.style.backgroundSize = 'cover';
+          el.style.backgroundPosition = 'center';
+          if ('textContent' in el) el.textContent = '';
+        } else {
+          el.style.backgroundImage = '';
+          if ('textContent' in el) {
+            const label = fallbackLabel || user?.name || user?.handle || '';
+            el.textContent = label ? label.trim().charAt(0).toUpperCase() : '';
+          }
+        }
+      }
+
+      function updateNavUser(user) {
+        const hasUser = !!user;
+        elements.sidebarSigned?.classList.toggle('hidden', !hasUser);
+        elements.sidebarGuest?.classList.toggle('hidden', hasUser);
+        if (hasUser) {
+          if (elements.sidebarName) elements.sidebarName.textContent = user.name || user.handle || '사용자';
+          if (elements.sidebarHandle) elements.sidebarHandle.textContent = user.handle || '@user';
+        }
+        const sidebarFallback = hasUser ? (user.handle || user.name || '@me') : 'Guest';
+        setAvatarBackground(elements.sidebarAvatar, user, sidebarFallback);
+        const dockFallback = hasUser ? (user.handle || user.name || '@me') : '';
+        setAvatarBackground(elements.mAvatar, user, dockFallback);
+        const icon = elements.btnAuthAction?.querySelector('i');
+        if (elements.btnAuthAction) {
+          elements.btnAuthAction.setAttribute('aria-label', hasUser ? '로그아웃' : '로그인');
+          elements.btnAuthAction.title = hasUser ? '로그아웃' : '로그인';
+          if (icon) icon.className = hasUser ? 'ri-logout-circle-line' : 'ri-login-circle-line';
+        }
+      }
+
+      function setGuard(open) {
+        if (!elements.guard || !elements.grid) return;
+        if (open) {
+          elements.guard.classList.remove('hidden');
+          elements.guard.classList.add('open');
+          elements.grid.classList.add('hidden');
+          setComposerEnabled(false, '로그인 후 메시지를 이용할 수 있습니다.');
+          elements.createGroup?.setAttribute('disabled', 'disabled');
+          updateNavUser(null);
+          stopChannelPolling();
+        } else {
+          elements.guard.classList.add('hidden');
+          elements.guard.classList.remove('open');
+          elements.grid.classList.remove('hidden');
+          setComposerEnabled(!!state.user);
+          elements.createGroup?.removeAttribute('disabled');
+          updateNavUser(state.user);
+        }
+      }
+
+      async function logout() {
+        try {
+          await fetchJSON('/api/logout', { method: 'POST' });
+        } catch (err) {
+          console.error('logout failed', err);
+        } finally {
+          state.user = null;
+          updateNavUser(null);
+          setGuard(true);
+          stopChannelPolling();
+          state.channels = [];
+          state.groups = [];
+          state.current = null;
+          state.messages.clear();
+          renderChanLists();
+          renderChat();
+        }
+      }
+
+      function setComposerEnabled(enabled, placeholder) {
+        if (elements.textarea) {
+          elements.textarea.disabled = !enabled;
+          if (placeholder) {
+            elements.textarea.placeholder = placeholder;
+          } else if (enabled) {
+            const channel = state.channels.find((c) => c.id === state.current);
+            const name = channel?.name || '채널';
+            elements.textarea.placeholder = `${name}에 메시지 보내기 (Shift+Enter 줄바꿈)`;
+          } else {
+            elements.textarea.placeholder = '로그인 후 메시지를 이용할 수 있습니다.';
+          }
+        }
+        if (elements.sendBtn) {
+          elements.sendBtn.disabled = !enabled;
+        }
+      }
+
+      function showAlert(title, message) {
+        if (!elements.alertModal) {
+          console.warn('Alert modal missing', title, message);
+          return;
+        }
+        if (elements.alertTitle) elements.alertTitle.textContent = title || '알림';
+        if (elements.alertBody) elements.alertBody.textContent = message || '';
+        openModal(elements.alertModal);
+      }
+
+      function escapeHtml(value) {
+        return String(value || '').replace(/[&<>"']/g, (ch) => (
+          { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] || ch
+        ));
+      }
+
+      function formatTime(value) {
+        if (!value) return '';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+        return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      }
+
+      function formatMessageText(text) {
+        return escapeHtml(text || '').replace(/\n/g, '<br>');
+      }
+
+      function channelAvatarLetter(channel) {
+        if (channel.avatar) return channel.avatar;
+        if (channel.counterpart && channel.counterpart.name) {
+          const initial = channel.counterpart.name.trim().charAt(0);
+          return initial || '#';
+        }
+        if (channel.name) {
+          const initial = channel.name.trim().charAt(0);
+          return initial || '#';
+        }
+        return '#';
+      }
+
+      function applyAvatar(el, channel, message, isOwn) {
+        if (!el) return;
+        const viewer = state.user || null;
+        let author = message?.author ? { ...message.author } : null;
+        if (isOwn && viewer) {
+          if (!author) {
+            author = {
+              id: viewer.id,
+              handle: viewer.handle,
+              name: viewer.name,
+              avatarUrl: viewer.avatarUrl || null,
+            };
+          } else {
+            author.avatarUrl ||= viewer.avatarUrl || null;
+            author.handle ||= viewer.handle;
+            author.name ||= viewer.name;
+          }
+        }
+        const counterpart = channel?.counterpart || null;
+        const fallback = isOwn
+          ? (viewer?.handle || viewer?.name || '나')
+          : (author?.handle || author?.name || counterpart?.handle || counterpart?.name || channel?.name || channel?.id || '•');
+        setAvatarBackground(el, author, fallback);
+        if (isOwn && (!author || !author.avatarUrl)) {
+          el.textContent = '나';
+        }
+      }
+
+      function compareByRecent(a, b) {
+        const aTime = new Date(a.lastMessageAt || a.createdAt || 0).getTime();
+        const bTime = new Date(b.lastMessageAt || b.createdAt || 0).getTime();
+        return bTime - aTime;
+      }
+
+      function renderSection(title, list, emptyHtml) {
+        const body = list.length
+          ? list.map((chan) => chanHTML(chan)).join('')
+          : `<div class="chan-empty">${emptyHtml || ''}</div>`;
+        return `<div class="ch-section"><div class="ch-title">${title}</div>${body}</div>`;
+      }
+
+      function chanHTML(channel) {
+        const activeClass = channel.id === state.current ? ' active' : '';
+        const avatar = channelAvatarLetter(channel);
+        const counterpart = channel.counterpart || null;
+        const safeHandle = counterpart?.handle ? escapeHtml(counterpart.handle) : '';
+        const safeAvatarUrl = counterpart?.avatarUrl
+          ? String(counterpart.avatarUrl).replace(/"/g, '%22').replace(/'/g, '%27')
+          : '';
+        const profileAttr = safeHandle ? ` data-profile-handle="${safeHandle}"` : '';
+        const avatarStyle = safeAvatarUrl ? ` style="background-image:url(\"${safeAvatarUrl}\");background-size:cover;background-position:center;"` : '';
+        const avatarHtml = safeAvatarUrl
+          ? `<div class="cava profile-link"${profileAttr}${avatarStyle}></div>`
+          : `<div class="cava${safeHandle ? ' profile-link' : ''}"${profileAttr}${avatarStyle}>${escapeHtml(avatar)}</div>`;
+        const badgeHtml = channel.type === 'group'
+          ? '<span class="tag brand">그룹</span>'
+          : channel.type === 'square'
+          ? '<span class="tag brand">전체</span>'
+          : '';
+        const metaParts = [];
+        if (channel.type === 'dm' && channel.counterpart?.handle) {
+          metaParts.push(channel.counterpart.handle);
+        }
+        if (channel.type === 'group') {
+          metaParts.push(`${channel.memberCount || 0}명 참여`);
+        }
+        if (channel.lastMessagePreview) {
+          metaParts.push(channel.lastMessagePreview);
+        } else if (channel.desc && channel.type !== 'dm') {
+          metaParts.push(channel.desc);
+        }
+        const subtitle = metaParts.filter(Boolean).join(' · ');
+        const unreadHtml = channel.unreadCount ? `<div class="unread">${channel.unreadCount}</div>` : '';
+        return `<div class="chan${activeClass}" data-chan="${channel.id}">
+          ${avatarHtml}
+          <div class="stack">
+            <div class="name">${escapeHtml(channel.name || '채널')}${badgeHtml}</div>
+            <div class="sub">
+              ${subtitle ? escapeHtml(subtitle) : ''}
+            </div>
+          </div>
+          ${unreadHtml}
+        </div>`;
+      }
+
+      function renderChanLists() {
+        if (!elements.chanList || !elements.mChanList) return;
+        const square = state.channels.filter((c) => c.type === 'square');
+        const dms = state.channels.filter((c) => c.type === 'dm').slice().sort(compareByRecent);
+        const groups = state.channels.filter((c) => c.type === 'group').slice().sort(compareByRecent);
+        const sections = [];
+        if (square.length) {
+          sections.push(renderSection('모두의 광장', square, ''));
+        }
+        sections.push(
+          renderSection(
+            '다이렉트 메시지',
+            dms,
+            '아직 다이렉트 메시지가 없습니다.<br/>상단의 새 다이렉트 버튼으로 시작해보세요.',
+          ),
+        );
+        sections.push(
+          renderSection(
+            '그룹',
+            groups,
+            state.groups.length
+              ? '참여한 그룹이 없습니다.<br/>그룹 찾기에서 새로운 채널을 탐색하세요.'
+              : '그룹 찾기에서 마음에 드는 채널을 선택하세요.',
+          ),
+        );
+        const html = sections.join('<div class="divider" role="separator" aria-hidden="true"></div>');
+        elements.chanList.innerHTML = html;
+        elements.mChanList.innerHTML = html;
+        elements.chanList.querySelectorAll('[data-chan]').forEach((el) => {
+          el.classList.toggle('active', el.dataset.chan === state.current);
+        });
+        elements.mChanList.querySelectorAll('[data-chan]').forEach((el) => {
+          el.classList.toggle('active', el.dataset.chan === state.current);
+        });
+      }
+
+      function renderGroupCatalog() {
+        if (!elements.groupCatalog) return;
+        if (!state.user) {
+          elements.groupCatalog.innerHTML = '<div class="chan-empty">로그인 후 이용할 수 있습니다.</div>';
+          return;
+        }
+        if (!state.groups.length) {
+          elements.groupCatalog.innerHTML = '<div class="chan-empty">참여 가능한 그룹이 없습니다.</div>';
+          return;
+        }
+        const cards = state.groups
+          .map((group) => {
+            const tagsHtml = Array.isArray(group.tags) && group.tags.length
+              ? `<div class="catalog-tags">${group.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>`
+              : '';
+            const actionHtml = group.joined
+              ? '<button class="btn" type="button" disabled>이미 참여중</button>'
+              : `<button class="btn primary" type="button" data-join="${group.id}"><i class="ri-user-add-line"></i><span>참여하기</span></button>`;
+            const avatar = (group.avatar || group.name || '#').charAt(0);
+            return `<article class="catalog-item" data-group="${group.id}">
+              <div style="display:flex; align-items:flex-start; gap:12px">
+                <div class="cava">${escapeHtml(avatar)}</div>
+                <div class="stack">
+                  <strong>${escapeHtml(group.name || '그룹')}</strong>
+                  <p>${escapeHtml(group.desc || '')}</p>
+                </div>
+              </div>
+              <div class="catalog-meta">
+                <span><i class="ri-user-smile-line"></i>${escapeHtml(`${group.memberCount || 0}명 참여`)}</span>
+              </div>
+              ${tagsHtml}
+              <div class="catalog-actions">${actionHtml}</div>
+            </article>`;
+          })
+          .join('');
+        elements.groupCatalog.innerHTML = cards;
+      }
+
+      function renderEmptyChat(channel) {
+        const name = channel.name || '채널';
+        let message = '메시지를 남겨보세요.';
+        if (channel.type === 'dm') {
+          message = '첫 메시지를 보내서 대화를 시작해보세요.';
+        } else if (channel.type === 'group') {
+          message = '이 그룹의 첫 대화를 만들어보세요.';
+        } else if (channel.type === 'square') {
+          message = '모두의 광장에 소식을 남겨 커뮤니티와 함께해요.';
+        }
+        return `<div class="empty-chat"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(message)}</span><span class="cmeta">새 메시지가 도착하면 자동으로 업데이트됩니다.</span></div>`;
+      }
+
+      function renderChat() {
+        if (!elements.cbody || !elements.ctitle || !elements.csub) return;
+        if (!state.user) {
+          elements.ctitle.textContent = '메시지';
+          elements.csub.textContent = '로그인 후 메시지를 이용할 수 있습니다.';
+          elements.cbody.innerHTML = '<div class="empty-chat"><strong>로그인이 필요합니다</strong><span>메시지를 확인하려면 로그인해 주세요.</span></div>';
+          setComposerEnabled(false, '로그인 후 메시지를 이용할 수 있습니다.');
+          if (elements.leaveGroup) elements.leaveGroup.style.display = 'none';
+          return;
+        }
+        const channel = state.channels.find((c) => c.id === state.current) || state.channels[0] || null;
+        if (!channel) {
+          elements.ctitle.textContent = '채널';
+          elements.csub.textContent = '대화방을 선택하세요.';
+          elements.cbody.innerHTML = '<div class="empty-chat"><strong>채널 없음</strong><span class="cmeta">다이렉트 메시지를 시작하거나 그룹에 참여해보세요.</span></div>';
+          setComposerEnabled(false, '채널을 선택하세요.');
+          if (elements.leaveGroup) elements.leaveGroup.style.display = 'none';
+          return;
+        }
+        if (channel.id !== state.current) {
+          state.current = channel.id;
+        }
+        elements.ctitle.textContent = channel.name || '채널';
+        elements.csub.textContent = channel.desc || '';
+        if (elements.leaveGroup) {
+          if (channel.type === 'group' && channel.joined !== false) {
+            elements.leaveGroup.style.display = '';
+            elements.leaveGroup.title = `${channel.name || '그룹'} 나가기`;
+            elements.leaveGroup.removeAttribute('disabled');
+          } else {
+            elements.leaveGroup.style.display = 'none';
+          }
+        }
+        const messages = state.messages.get(channel.id) || [];
+        if (state.loadingMessages && !messages.length) {
+          elements.cbody.innerHTML = '<div class="empty-chat"><strong>메시지를 불러오는 중입니다</strong></div>';
+          setComposerEnabled(false, '메시지를 불러오는 중입니다...');
+          return;
+        }
+        if (!messages.length) {
+          elements.cbody.innerHTML = renderEmptyChat(channel);
+          setComposerEnabled(true);
+          return;
+        }
+        const fragment = document.createDocumentFragment();
+        messages.forEach((msg) => {
+          const isOwn = !!(msg.author && state.user && msg.author.id === state.user.id);
+          const row = document.createElement('div');
+          row.className = 'row' + (isOwn ? ' me' : '');
+          const avatarEl = document.createElement('div');
+          avatarEl.className = 'cava';
+          applyAvatar(avatarEl, channel, msg, isOwn);
+          const stack = document.createElement('div');
+          stack.className = 'bubble-stack';
+          if (!isOwn && msg.author) {
+            const senderEl = document.createElement('div');
+            senderEl.className = 'sender';
+            let label = escapeHtml(msg.author.name || msg.author.handle || '회원');
+            if (msg.author.handle && msg.author.handle !== msg.author.name) {
+              label += `<span class="cmeta" style="margin-left:6px">${escapeHtml(msg.author.handle)}</span>`;
+            }
+            senderEl.innerHTML = label;
+            stack.appendChild(senderEl);
+          }
+          const bubble = document.createElement('div');
+          bubble.className = 'bub';
+          bubble.innerHTML = formatMessageText(msg.text || '');
+          stack.appendChild(bubble);
+          row.appendChild(avatarEl);
+          row.appendChild(stack);
+          const stamp = document.createElement('div');
+          stamp.className = 'stamp';
+          stamp.textContent = formatTime(msg.createdAt);
+          row.appendChild(stamp);
+          fragment.appendChild(row);
+        });
+        elements.cbody.innerHTML = '';
+        elements.cbody.appendChild(fragment);
+        elements.cbody.scrollTop = elements.cbody.scrollHeight;
+        setComposerEnabled(true);
+      }
+
+      async function ensureMessages(channelId) {
+        if (!channelId) return;
+        if (state.messages.has(channelId)) return;
+        state.loadingMessages = true;
+        try {
+          const data = await fetchJSON(`/api/messages/channels/${encodeURIComponent(channelId)}/messages`);
+          const messages = Array.isArray(data?.messages) ? data.messages : [];
+          state.messages.set(channelId, messages);
+          if (data?.channel) {
+            const idx = state.channels.findIndex((c) => c.id === data.channel.id);
+            if (idx >= 0) {
+              state.channels[idx] = { ...state.channels[idx], ...data.channel };
+            } else {
+              state.channels.push(data.channel);
+            }
+          }
+        } catch (err) {
+          if (err.status === 401) {
+            state.user = null;
+            setGuard(true);
+          } else if (err.status === 404) {
+            showAlert('채널 오류', '채널을 찾을 수 없습니다.');
+          } else if (err.status === 501) {
+            showAlert('메시지 저장소 미구성', '.env에서 LOOMA_DATA_MODE를 file로 설정하거나 Supabase 메시지 테이블을 준비해 주세요.');
+            setGuard(true);
+          } else {
+            console.error(err);
+            showAlert('불러오기 실패', '메시지를 불러오는 중 오류가 발생했습니다.');
+          }
+        } finally {
+          state.loadingMessages = false;
+        }
+      }
+
+      async function loadChannels({ preserveCurrent = false, focusChannel } = {}) {
+        const previous = state.current;
+        try {
+          stopChannelPolling();
+          const data = await fetchJSON('/api/messages/channels');
+          state.user = data?.user || null;
+          updateNavUser(state.user);
+          state.channels = Array.isArray(data?.channels) ? data.channels.slice() : [];
+          state.groups = Array.isArray(data?.groups) ? data.groups.slice() : [];
+          if (focusChannel && state.channels.some((c) => c.id === focusChannel)) {
+            state.current = focusChannel;
+          } else if (preserveCurrent && previous && state.channels.some((c) => c.id === previous)) {
+            state.current = previous;
+          } else if (state.current && !state.channels.some((c) => c.id === state.current)) {
+            state.current = state.channels[0]?.id || null;
+          } else if (!state.current && state.channels.length) {
+            state.current = state.channels[0].id;
+          }
+          if (state.user) {
+            setGuard(false);
+          } else {
+            setGuard(true);
+          }
+          renderChanLists();
+          if (elements.modalGroups?.classList.contains('open')) {
+            renderGroupCatalog();
+          }
+          if (state.current) {
+            state.loadingMessages = !state.messages.has(state.current);
+            renderChat();
+            await ensureMessages(state.current);
+            state.loadingMessages = false;
+            renderChat();
+            startChannelPolling(state.current);
+            pollChannelOnce();
+          } else {
+            renderChat();
+          }
+        } catch (err) {
+          stopChannelPolling();
+          if (err.status === 401) {
+            state.user = null;
+            updateNavUser(null);
+            state.channels = [];
+            state.groups = [];
+            state.current = null;
+            state.messages.clear();
+            setGuard(true);
+            renderChanLists();
+            renderChat();
+            return;
+          }
+          if (err.status === 501) {
+            showAlert('메시지 저장소 미구성', '.env에서 LOOMA_DATA_MODE=file로 설정한 뒤 서버를 재시작하거나 Supabase 메시지 스키마를 구성해 주세요.');
+            setGuard(true);
+            state.channels = [];
+            state.groups = [];
+            state.current = null;
+            state.messages.clear();
+            updateNavUser(null);
+            renderChanLists();
+            renderChat();
+            return;
+          }
+          console.error(err);
+          showAlert('불러오기 실패', '메시지 데이터를 불러오지 못했습니다.');
+        }
+      }
+
+      function setCurrentChannel(id) {
+        if (!id || state.current === id) return;
+        if (!state.channels.some((c) => c.id === id)) return;
+        stopChannelPolling();
+        state.current = id;
+        state.loadingMessages = !state.messages.has(id);
+        renderChanLists();
+        renderChat();
+        ensureMessages(id)
+          .then(() => {
+            state.loadingMessages = false;
+            renderChat();
+            startChannelPolling(id);
+            pollChannelOnce();
+          })
+          .catch(() => {
+            state.loadingMessages = false;
+          });
+        elements.drawer?.classList.remove('open');
+      }
+
+      async function joinGroup(channelId) {
+        if (!channelId) return;
+        if (!state.user) {
+          showAlert('로그인 필요', '로그인 후 그룹에 참여할 수 있습니다.');
+          return;
+        }
+        try {
+          await fetchJSON(`/api/messages/channels/${encodeURIComponent(channelId)}/join`, { method: 'POST' });
+          state.messages.delete(channelId);
+          closeModal(elements.modalGroups);
+          await loadChannels({ focusChannel: channelId });
+        } catch (err) {
+          if (err.status === 404) {
+            showAlert('그룹 오류', '그룹을 찾을 수 없습니다.');
+          } else if (err.status === 403) {
+            showAlert('참여 불가', '이 그룹에는 참여할 수 없습니다.');
+          } else if (err.status === 401) {
+            state.user = null;
+            setGuard(true);
+            updateNavUser(null);
+          } else if (err.status === 501) {
+            showAlert('그룹 기능 미구성', '.env에서 LOOMA_DATA_MODE=file로 설정했는지 확인하거나 Supabase 메시지 스키마를 구성해 주세요.');
+          } else {
+            console.error(err);
+            showAlert('참여 실패', '그룹에 참여하는 중 오류가 발생했습니다.');
+          }
+        }
+      }
+
+      function parseGroupTagsInput(raw) {
+        if (!raw) return [];
+        const tokens =
+          Array.isArray(raw) && !Array.isArray(raw[0])
+            ? raw
+            : String(raw || '')
+                .split(',')
+                .map((token) => token);
+        const tags = [];
+        const seen = new Set();
+        tokens.forEach((token) => {
+          if (tags.length >= 6) return;
+          let tag = String(token || '').trim();
+          if (!tag) return;
+          if (tag.startsWith('#')) tag = tag.slice(1);
+          tag = tag.replace(/\s+/g, ' ');
+          if (!tag) return;
+          const normalized = tag.slice(0, 32);
+          const key = normalized.toLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          tags.push(normalized);
+        });
+        return tags;
+      }
+
+      function openCreateGroupModal() {
+        if (!state.user) {
+          showAlert('로그인 필요', '로그인 후 그룹을 생성할 수 있습니다.');
+          return;
+        }
+        if (!elements.modalCreateGroup || !elements.createGroupForm) {
+          showAlert('구성 오류', '그룹 생성 모달을 찾을 수 없습니다.');
+          return;
+        }
+        elements.createGroupForm.reset();
+        elements.createGroupSubmit?.removeAttribute('disabled');
+        openModal(elements.modalCreateGroup);
+        setTimeout(() => elements.createGroupName?.focus(), 0);
+      }
+
+      async function submitCreateGroup(event) {
+        event.preventDefault();
+        if (!elements.createGroupForm) return;
+        if (!state.user) {
+          closeModal(elements.modalCreateGroup);
+          showAlert('로그인 필요', '로그인 후 그룹을 생성할 수 있습니다.');
+          return;
+        }
+        const formData = new FormData(elements.createGroupForm);
+        const name = String(formData.get('name') || '').trim();
+        const desc = String(formData.get('desc') || '').trim();
+        const tagsRaw = formData.get('tags');
+        const tags = parseGroupTagsInput(tagsRaw);
+        if (!name) {
+          showAlert('입력 필요', '그룹 이름을 입력해 주세요.');
+          elements.createGroupName?.focus();
+          return;
+        }
+        const submitBtn = elements.createGroupSubmit;
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+          const res = await fetchJSON('/api/messages/channels', {
+            method: 'POST',
+            body: { type: 'group', name, desc, tags },
+          });
+          closeModal(elements.modalCreateGroup);
+          if (elements.modalGroups?.classList.contains('open')) {
+            closeModal(elements.modalGroups);
+          }
+          const channelId = res?.channel?.id;
+          state.messages.delete(channelId);
+          await loadChannels({ focusChannel: channelId });
+          showAlert('그룹 생성 완료', `${res?.channel?.name || name} 그룹이 생성되었습니다.`);
+        } catch (err) {
+          if (err.status === 409) {
+            showAlert('중복된 이름', '이미 사용 중인 그룹 이름입니다.');
+          } else if (err.status === 400) {
+            const message =
+              (err.data && (err.data.message || err.data.error)) ||
+              '그룹 정보를 확인해 주세요.';
+            showAlert('생성 실패', message);
+          } else if (err.status === 401) {
+            state.user = null;
+            setGuard(true);
+            updateNavUser(null);
+            closeModal(elements.modalCreateGroup);
+          } else if (err.status === 501) {
+            showAlert('그룹 기능 미구성', 'Supabase 메시지 스키마를 먼저 구성해 주세요.');
+          } else {
+            console.error(err);
+            showAlert('생성 실패', '그룹을 생성할 수 없습니다.');
+          }
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      }
+
+      async function leaveCurrentGroup() {
+        if (!state.user) {
+          showAlert('로그인 필요', '로그인 후 그룹을 나갈 수 있습니다.');
+          return;
+        }
+        const channelId = state.current;
+        const channel = state.channels.find((c) => c.id === channelId);
+        if (!channel || channel.type !== 'group') return;
+        const confirmMessage = `${channel.name || '그룹'}에서 나가시겠습니까?`;
+        if (!window.confirm(confirmMessage)) return;
+        try {
+          await fetchJSON(`/api/messages/channels/${encodeURIComponent(channelId)}/leave`, {
+            method: 'POST',
+          });
+          state.messages.delete(channelId);
+          await loadChannels({ preserveCurrent: false });
+          showAlert('그룹 나가기', `${channel.name || '그룹'}에서 나갔습니다.`);
+        } catch (err) {
+          if (err.status === 400) {
+            const message =
+              (err.data && (err.data.message || err.data.error)) ||
+              '그룹 정보를 확인해 주세요.';
+            showAlert('나가기 실패', message);
+          } else if (err.status === 404) {
+            showAlert('그룹 오류', '그룹을 찾을 수 없습니다.');
+          } else if (err.status === 401) {
+            state.user = null;
+            setGuard(true);
+            updateNavUser(null);
+          } else {
+            console.error(err);
+            showAlert('나가기 실패', '그룹을 나가는 중 오류가 발생했습니다.');
+          }
+        }
+      }
+
+      async function startDirectMessage() {
+        if (!state.user) {
+          showAlert('로그인 필요', '로그인 후 다이렉트 메시지를 이용할 수 있습니다.');
+          return;
+        }
+        if (!elements.startDmModal || !elements.dmForm || !elements.dmInput) {
+          showAlert('구성 오류', '다이렉트 메시지 모달을 찾을 수 없습니다.');
+          return;
+        }
+        elements.dmForm.reset();
+        if (elements.dmSubmit) elements.dmSubmit.disabled = false;
+        openModal(elements.startDmModal);
+        setTimeout(() => elements.dmInput?.focus(), 0);
+      }
+
+      async function sendCurrentMessage() {
+        if (!state.user) {
+          showAlert('로그인 필요', '로그인 후 메시지를 보낼 수 있습니다.');
+          return;
+        }
+        if (sendingMessage) return;
+        const channelId = state.current;
+        if (!channelId) {
+          showAlert('채널 선택', '먼저 채널을 선택하세요.');
+          return;
+        }
+        const text = (elements.textarea?.value || '').trim();
+        if (!text) return;
+        sendingMessage = true;
+        elements.sendBtn && (elements.sendBtn.disabled = true);
+        try {
+          const res = await fetchJSON(`/api/messages/channels/${encodeURIComponent(channelId)}/messages`, {
+            method: 'POST',
+            body: { text },
+          });
+          const message = res?.message;
+          if (elements.textarea) {
+            elements.textarea.value = '';
+            elements.textarea.style.height = 'auto';
+            elements.textarea.dispatchEvent(new Event('input'));
+          }
+          if (message) {
+            if (!state.messages.has(channelId)) state.messages.set(channelId, []);
+            const list = state.messages.get(channelId);
+            list.push(message);
+            const channelMeta = state.channels.find((c) => c.id === channelId);
+            if (channelMeta) {
+              channelMeta.lastMessageAt = message.createdAt;
+              channelMeta.lastMessagePreview = message.text?.slice(0, 120) || '';
+            }
+            renderChat();
+            renderChanLists();
+          } else {
+            await loadChannels({ focusChannel: channelId });
+          }
+        } catch (err) {
+          if (err.status === 400) {
+            showAlert('전송 실패', '메시지를 전송할 수 없습니다. 내용을 확인하세요.');
+          } else if (err.status === 403) {
+            showAlert('권한 없음', '이 채널에는 메시지를 보낼 수 없습니다.');
+          } else if (err.status === 401) {
+            state.user = null;
+            setGuard(true);
+          } else {
+            console.error(err);
+            showAlert('전송 오류', '메시지 전송 중 오류가 발생했습니다.');
+          }
+        } finally {
+          sendingMessage = false;
+          if (elements.sendBtn && state.user) {
+            elements.sendBtn.disabled = false;
+          }
+        }
+      }
+
+      function openModal(idOrElement) {
+        const modal = typeof idOrElement === 'string' ? document.getElementById(idOrElement) : idOrElement;
+        if (!modal) return;
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal(idOrElement) {
+        const modal = typeof idOrElement === 'string' ? document.getElementById(idOrElement) : idOrElement;
+        if (!modal) return;
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+
+      document.addEventListener('click', (event) => {
+        const profileEl = event.target.closest('[data-profile-handle]');
+        if (profileEl) {
+          const handle = profileEl.getAttribute('data-profile-handle');
+          if (handle) {
+            event.preventDefault();
+            const normalized = handle.startsWith('@') ? handle.slice(1) : handle;
+            if (normalized) {
+              window.location.href = `profile.html?handle=${encodeURIComponent(normalized)}`;
+              return;
+            }
+          }
+        }
+        const channelEl = event.target.closest('[data-chan]');
+        if (channelEl) {
+          event.preventDefault();
+          setCurrentChannel(channelEl.dataset.chan);
+        }
+        const closeEl = event.target.closest('[data-close]');
+        if (closeEl) {
+          event.preventDefault();
+          closeModal(closeEl.getAttribute('data-close'));
+        }
+        const joinEl = event.target.closest('[data-join]');
+        if (joinEl) {
+          event.preventDefault();
+          joinGroup(joinEl.getAttribute('data-join'));
+        }
+      });
+
+      elements.startDM?.addEventListener('click', startDirectMessage);
+      elements.btnAuthAction?.addEventListener('click', () => {
+        if (state.user) logout();
+        else window.location.href = 'auth.html';
+      });
+      elements.btnLogout?.addEventListener('click', () => {
+        logout();
+      });
+      elements.createGroup?.addEventListener('click', () => {
+        openCreateGroupModal();
+      });
+      elements.modalCreateGroupBtn?.addEventListener('click', () => {
+        if (!state.user) {
+          showAlert('로그인 필요', '로그인 후 그룹을 생성할 수 있습니다.');
+          return;
+        }
+        closeModal(elements.modalGroups);
+        openCreateGroupModal();
+      });
+      elements.createGroupForm?.addEventListener('submit', submitCreateGroup);
+      elements.modalCreateGroup?.addEventListener('click', (event) => {
+        if (event.target === elements.modalCreateGroup) {
+          closeModal(elements.modalCreateGroup);
+        }
+      });
+      elements.leaveGroup?.addEventListener('click', leaveCurrentGroup);
+      elements.browseGroups.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (!state.user) {
+            showAlert('로그인 필요', '로그인 후 그룹을 둘러볼 수 있습니다.');
+            return;
+          }
+          renderGroupCatalog();
+          openModal(elements.modalGroups);
+        });
+      });
+
+      elements.modalGroups?.addEventListener('click', (event) => {
+        if (event.target === elements.modalGroups) {
+          closeModal(elements.modalGroups);
+        }
+      });
+
+      elements.dmForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!elements.dmInput) return;
+        if (!state.user) {
+          closeModal(elements.startDmModal);
+          showAlert('로그인 필요', '로그인 후 다이렉트 메시지를 이용할 수 있습니다.');
+          return;
+        }
+        const raw = elements.dmInput.value.trim();
+        if (!raw) {
+          showAlert('입력 필요', '상대 아이디를 입력해 주세요.');
+          elements.dmInput.focus();
+          return;
+        }
+        const handle = raw.startsWith('@') ? raw : `@${raw}`;
+        const submitBtn = elements.dmSubmit;
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+          const res = await fetchJSON('/api/messages/direct', {
+            method: 'POST',
+            body: { handle },
+          });
+          closeModal(elements.startDmModal);
+          const channelId = res?.channel?.id;
+          if (channelId) {
+            state.messages.delete(channelId);
+            await loadChannels({ focusChannel: channelId });
+          } else {
+            await loadChannels({ preserveCurrent: true });
+          }
+        } catch (err) {
+          if (err.status === 404) {
+            showAlert('사용자를 찾을 수 없습니다', '입력한 아이디의 사용자를 찾을 수 없습니다.');
+            elements.dmInput.focus();
+          } else if (err.status === 400) {
+            showAlert('입력 오류', '올바른 아이디를 입력해 주세요.');
+            elements.dmInput.focus();
+          } else if (err.status === 401) {
+            closeModal(elements.startDmModal);
+            state.user = null;
+            setGuard(true);
+          } else if (err.status === 501) {
+            closeModal(elements.startDmModal);
+            showAlert('메시지 저장소 미구성', '.env에서 LOOMA_DATA_MODE=file로 설정하거나 Supabase 메시지 스키마를 구성해 주세요.');
+          } else {
+            console.error(err);
+            showAlert('생성 실패', '다이렉트 메시지를 생성할 수 없습니다.');
+          }
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+
+      elements.sendBtn?.addEventListener('click', sendCurrentMessage);
+      elements.textarea?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          sendCurrentMessage();
+        }
+      });
+      elements.textarea?.addEventListener('input', () => {
+        elements.textarea.style.height = 'auto';
+        elements.textarea.style.height = Math.min(160, elements.textarea.scrollHeight) + 'px';
+      });
+
+      elements.openDrawerBtn?.addEventListener('click', () => {
+        elements.drawer?.classList.add('open');
+      });
+      elements.channelPicker?.addEventListener('click', () => {
+        elements.drawer?.classList.add('open');
+      });
+      elements.closeDrawerBtn?.addEventListener('click', () => {
+        elements.drawer?.classList.remove('open');
+      });
+      elements.drawer?.addEventListener('click', (event) => {
+        if (event.target === elements.drawer) {
+          elements.drawer.classList.remove('open');
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeModal(elements.modalGroups);
+          elements.drawer?.classList.remove('open');
+        }
+      });
+
+      function setupDockPadding() {
+        const root = document.querySelector('.messages-root');
+        if (!root) return;
+        const mq = window.matchMedia('(max-width:1023.98px)');
+        const apply = () => {
+          root.classList.toggle('with-dock-pad', mq.matches);
+        };
+        apply();
+        mq.addEventListener('change', apply);
+      }
+
+      async function init() {
+        setupDockPadding();
+        await loadChannels();
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>

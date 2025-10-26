@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="ko" data-theme="auto">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Looma — Home</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Peta:wght@800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet"/>
+
+  <!-- (옵션) PWA 느낌 강화용 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0A0A0A">
+  <script>
+    (function(){
+      try{
+        var root = document.documentElement;
+        var theme = localStorage.getItem('looma:theme');
+        if(theme !== 'light' && theme !== 'dark'){ theme = 'auto'; }
+        if(theme === 'auto'){ root.removeAttribute('data-theme'); }
+        else{ root.setAttribute('data-theme', theme); }
+        root.dataset.themePreference = theme;
+      }catch(err){
+        /* ignore */
+      }
+    })();
+  </script>
+  <script src="theme.js"></script>
+  <script src="notify-badge.js" defer></script>
+
+  <!-- 관리자 토글 기본값: 익명 댓글 허용 (app.js에서 localStorage로 오버라이드 가능) -->
+  <meta name="looma-allow-anon-comments" content="true"/>
+
+  <style>
+    :root{
+      --bg:#0A0A0A; --surface:#111213; --elev:#151618; --line:#1E2023;
+      --text:#EDEFF2; --muted:#9AA3AE; --brand:#0EA5E9;
+      --radius:12px; --shadow:0 6px 16px rgba(0,0,0,.16); --speed:.18s;
+      --dock-h:64px; --footer-h:44px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#F7F8FA; --surface:#FFFFFF; --elev:#F3F5F8; --line:#E6EAF0;
+        --text:#0B1220; --muted:#596174; --brand:#0077FF;
+        --shadow:0 10px 20px rgba(10,16,30,.06);
+      }
+    }
+    *{ box-sizing:border-box }
+    html, body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    a{ color:inherit; text-decoration:none }
+    button{ font:inherit; background:none; border:0; color:inherit; cursor:pointer }
+    input, textarea, select{
+      color:inherit;
+      background:transparent;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px 12px;
+    }
+
+    .notif-link{ position:relative; display:inline-flex; }
+    .notif-nav{ position:relative; }
+    .notif-badge{
+      position:absolute;
+      top:-4px;
+      right:-4px;
+      min-width:16px;
+      height:16px;
+      padding:0 4px;
+      border-radius:999px;
+      background:#ef4444;
+      color:#fff;
+      font-size:10px;
+      font-weight:700;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .notif-badge.hidden{ display:none !important; }
+
+    .looma-select{ position:relative; }
+    .looma-select .trigger{
+      width:100%; display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+      background:var(--surface); color:var(--text); font-weight:600;
+      transition: border-color var(--speed), background var(--speed);
+    }
+    .looma-select .trigger i{ font-size:16px; color:var(--muted); transition: transform var(--speed); }
+    .looma-select[data-open="true"] .trigger{ border-color:var(--brand); }
+    .looma-select[data-open="true"] .trigger i{ transform:rotate(180deg); }
+    .looma-select .options{
+      position:absolute; top:calc(100% + 6px); left:0; right:0;
+      border-radius:12px; border:1px solid var(--line); background:var(--surface);
+      box-shadow:var(--shadow); padding:6px 0; display:grid; gap:2px;
+      opacity:0; visibility:hidden; transform:translateY(-4px);
+      transition:opacity var(--speed), transform var(--speed), visibility var(--speed);
+      z-index:260;
+    }
+    .looma-select[data-open="true"] .options{ opacity:1; visibility:visible; transform:translateY(0); }
+    .looma-select .option{
+      padding:10px 14px; text-align:left; border:0; background:none; color:inherit; font-weight:500;
+    }
+    .looma-select .option:hover,
+    .looma-select .option.active{
+      background:var(--elev);
+    }
+
+    .app{ min-height:100dvh; display:grid; grid-template-rows:auto 1fr auto }
+
+    /* ===== Page transitions (View Transition API) ===== */
+    @keyframes vtFadeInDesktop{
+      0%{ opacity:0; transform:translate3d(36px,0,0) scale(.985); }
+      100%{ opacity:1; transform:none; }
+    }
+    @keyframes vtFadeOutDesktop{
+      0%{ opacity:1; transform:none; }
+      100%{ opacity:0; transform:translate3d(-28px,0,0) scale(.985); }
+    }
+    @keyframes vtFadeInMobile{
+      0%{ opacity:0; transform:translate3d(0,40px,0) scale(.985); }
+      100%{ opacity:1; transform:none; }
+    }
+    @keyframes vtFadeOutMobile{
+      0%{ opacity:1; transform:none; }
+      100%{ opacity:0; transform:translate3d(0,-32px,0) scale(.985); }
+    }
+    @media (min-width:1024px){
+      ::view-transition-old(root){
+        animation: vtFadeOutDesktop .36s cubic-bezier(.22,.61,.36,1) both;
+      }
+      ::view-transition-new(root){
+        animation: vtFadeInDesktop .36s cubic-bezier(.16,.84,.44,1) both;
+      }
+    }
+    @media (max-width:1023.98px){
+      ::view-transition-old(root){
+        animation: vtFadeOutMobile .34s cubic-bezier(.25,.8,.25,1) both;
+      }
+      ::view-transition-new(root){
+        animation: vtFadeInMobile .34s cubic-bezier(.16,.84,.44,1) both;
+      }
+    }
+    @media (prefers-reduced-motion: reduce){
+      ::view-transition-old(root),
+      ::view-transition-new(root){
+        animation: none !important;
+      }
+    }
+
+    /* ===== Mobile TopBar ===== */
+    .m-top{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-bottom:1px solid var(--line); background:var(--surface);
+      position:sticky; top:0; z-index:20;
+    }
+    .m-left{ display:flex; align-items:center; gap:10px }
+    .m-center{ position:absolute; left:50%; transform:translateX(-50%); pointer-events:none }
+    .m-right{ display:flex; align-items:center; gap:8px }
+    .brand{ font-family:"Lexend Peta"; font-weight:800; letter-spacing:.4px; color:var(--text) }
+    .avatar{
+      width:28px; height:28px; aspect-ratio:1/1; border-radius:50%; background:#D1D5DB;
+      flex:0 0 28px; display:flex; align-items:center; justify-content:center;
+      background-position:center; background-size:cover; background-repeat:no-repeat;
+      font-weight:700; font-size:12px; color:#fff; text-transform:uppercase;
+    }
+    .icon-btn{
+      width:32px; height:32px; border-radius:50%;
+      border:1px solid var(--line); background:var(--elev);
+      display:inline-flex; align-items:center; justify-content:center;
+      transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .icon-btn i{ font-size:16px; line-height:1; }
+    .icon-btn:hover{ background:var(--brand); border-color:transparent; color:#fff; transform:translateY(-1px); }
+    .me-card .icon-btn{ margin-left:auto; }
+    @media (min-width:1024px){ .m-top{ display:none } }
+
+    /* ===== Main Grid ===== */
+    .main{ display:grid; gap:16px; grid-template-columns:1fr; padding:16px }
+    @media (min-width:1024px){ .main{ grid-template-columns:260px 1fr 320px; padding-bottom:calc(var(--footer-h) + 8px) } }
+    .container{ max-width:unset; width:100%; margin:0 auto }
+
+    /* ===== Sidebar ===== */
+    .sidebar{ display:none }
+    @media (min-width:1024px){
+      .sidebar{
+        display:flex; flex-direction:column; gap:14px;
+        border-right:1px solid var(--line); padding:20px 12px 20px 0;
+      }
+      .side-head{ padding:0 8px }
+      .side-brand{ font-family:"Lexend Peta"; font-weight:800; font-size:18px }
+      .me-card{
+        display:flex; align-items:center; gap:10px; padding:10px;
+        border:1px solid var(--line); border-radius:12px; background:var(--surface);
+        background-image: linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.03)); /* 이 카드만 은은한 그라데이션 */
+      }
+      .me-card .name{ font-weight:600 }
+      .me-card .id{ color:var(--muted); font-size:12px }
+
+      .nav{ display:flex; flex-direction:column; gap:6px; margin-top:4px }
+      .nav a{
+        display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
+        border:1px solid transparent; transition: background var(--speed), border-color var(--speed);
+      }
+      .nav a:hover{ background:var(--elev); border-color:var(--line) }
+      .nav a.active{ background:var(--elev); border-color:var(--line) }
+      .nav .icon{ font-size:18px } .nav .label{ font-weight:600 }
+    }
+
+    /* ===== Timeline: 화면 가용폭 전부 사용 ===== */
+    .timeline{ width:100% !important; max-width:none !important; margin:0 auto }
+    .timeline .composer, .timeline .post{ width:100% !important }
+    .timeline > .notice-banner{ margin-bottom:12px }
+
+    /* 1024–1599px: 오른쪽 레일 접고 중앙 100% */
+    @media (min-width:1024px) and (max-width:1599.98px){
+      .main{ grid-template-columns:260px 1fr !important }
+      .rrail{ display:none !important }
+    }
+    /* 1600px+: 3열 유지하되 중앙 최소 1360px 보장 */
+    @media (min-width:1600px){
+      .main{ grid-template-columns:260px minmax(1360px, 1fr) 320px !important }
+    }
+
+    /* ===== Composer ===== */
+    .composer{
+      position:relative;
+      display:flex; gap:12px; align-items:flex-start;
+      border:1px solid var(--line); border-radius:12px; background:var(--surface);
+      padding:12px;
+    }
+    .avatar.lg{
+      width:44px; height:44px; aspect-ratio:1/1; border-radius:50%; background:#D1D5DB;
+      flex:0 0 44px; display:inline-block;
+    }
+    .composer-col{ flex:1; display:flex; flex-direction:column; gap:8px }
+    .composer textarea{
+      width:100%; min-height:76px; resize:vertical;
+      border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+      background:transparent; color:var(--text); outline:none;
+    }
+
+    /* 첨부 썸네일 트레이 */
+    .attachments{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px }
+    .thumb{
+      position:relative; width:80px; height:80px; border:1px solid var(--line);
+      border-radius:10px; overflow:hidden; background:#000;
+    }
+    .thumb img, .thumb video{ width:100%; height:100%; object-fit:cover; display:block }
+    .thumb .close{
+      position:absolute; top:4px; right:4px; width:20px; height:20px;
+      border-radius:999px; display:grid; place-items:center; font-size:14px;
+      color:#fff; background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.25);
+    }
+    .thumb .badge{
+      position:absolute; bottom:4px; right:4px; font-size:11px; padding:2px 6px;
+      border-radius:6px; color:#fff; background:rgba(0,0,0,.55);
+    }
+    .thumb .vi{ position:absolute; bottom:4px; left:4px; font-size:14px; color:#fff; opacity:.9 }
+    .thumb.poll{
+      width:150px; height:auto; min-height:84px; background:var(--surface);
+      color:var(--text); border:1px solid var(--line); border-radius:12px; padding:10px;
+      display:flex; flex-direction:column; gap:6px; overflow:hidden;
+    }
+    .thumb.poll .close{ top:6px; right:6px }
+    .thumb.poll .poll-q{ font-weight:600; font-size:12px; }
+    .thumb.poll ul{ margin:0; padding-left:18px; font-size:11px; color:var(--muted); display:grid; gap:4px; }
+
+    .toolbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap }
+    .tool-left{ display:flex; gap:6px; align-items:center; flex-wrap:wrap }
+    .icon-pill{
+      height:32px; padding:0 10px; border-radius:999px; border:1px solid var(--line); background:var(--elev);
+      display:inline-flex; align-items:center; gap:6px; font-size:13px; transition: transform var(--speed)
+    }
+    .icon-pill i{ font-size:16px }
+    .icon-pill:hover{ transform: translateY(-1px) }
+    .post-btn{
+      height:32px; padding:0 12px; border-radius:10px; border:1px solid var(--line);
+      background:var(--brand); color:#fff; font-weight:700;
+    }
+    .composer-locked{
+      position:absolute; inset:0; border-radius:16px; cursor:not-allowed;
+      background:rgba(0,0,0,.6); color:#fff; display:flex; align-items:center; justify-content:center;
+      text-align:center; padding:16px; font-weight:600;
+    }
+    :root[data-theme="light"] .composer-locked{ background:rgba(255,255,255,.85); color:#0B1220; }
+
+    /* ===== Post ===== */
+    .post{
+      position:relative; overflow:visible;
+      display:grid; grid-template-columns:auto 1fr; gap:12px;
+      border:1px solid var(--line); border-radius:12px; background:var(--surface);
+      padding:14px; margin-top:12px; animation: fadeUp .28s ease both;
+    }
+    .post .meta{ display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted) }
+    .post .actions{ display:flex; gap:6px; margin-top:8px }
+    .pill{ padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:var(--elev) }
+    .pill.sm{ padding:6px 12px; font-size:12px; }
+    @keyframes fadeUp{ from{ opacity:0; transform: translateY(6px) } to{ opacity:1; transform:none } }
+
+    /* 댓글 영역 */
+    .comments{ margin-top:10px; border-top:1px solid var(--line); padding-top:10px }
+    .comment-row{ display:flex; gap:10px; align-items:flex-start; margin:8px 0 }
+    .comment-bubble{ padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:var(--elev) }
+    .comment-meta{ font-size:12px; color:var(--muted); margin-bottom:4px }
+    .comment-actions{ display:flex; gap:6px; margin-top:6px }
+
+    .comment-form{ display:flex; gap:8px; align-items:center; margin-top:8px }
+    .comment-form input[type="text"]{ flex:1; padding:8px 10px; border-radius:10px; }
+    .comment-form button{ padding:8px 12px; border-radius:10px; border:1px solid var(--line) }
+    .post-media-grid{ display:grid; gap:8px; margin:8px 0; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); }
+    .post-media-grid .media{
+      position:relative; overflow:hidden; border-radius:10px; border:1px solid var(--line); background:#000;
+      cursor:pointer;
+    }
+    .post-media-grid .media img,
+    .post-media-grid .media video{ width:100%; height:100%; object-fit:cover; display:block; }
+    .post-media-grid .media img{ max-height:240px; }
+    .post-media-grid .media.video video{ max-height:240px; }
+    .post-media-grid .media::after{
+      content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent 60%, rgba(0,0,0,.35));
+      opacity:0; transition:opacity var(--speed);
+    }
+    .post-media-grid .media:hover::after{ opacity:.75; }
+    .post-media-grid .media .media-overlay{
+      position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:flex-end; padding:6px;
+      pointer-events:none;
+    }
+    .post-media-grid .media .media-overlay i{ font-size:18px; color:#fff; }
+    .poll-card{
+      border:1px solid var(--line); border-radius:12px; padding:14px; background:var(--elev); margin:8px 0;
+      display:flex; flex-direction:column; gap:12px;
+    }
+    .poll-card[data-loading="true"]{ opacity:.7; pointer-events:none; }
+    .poll-card .poll-question{ font-weight:700; font-size:15px; }
+    .poll-card .poll-options{ display:flex; flex-direction:column; gap:8px; }
+    .poll-card .poll-option{
+      width:100%; padding:10px 14px; border-radius:999px; border:1px solid var(--line);
+      background:var(--surface); color:var(--text); text-align:left; font-weight:600;
+      transition: background var(--speed), border-color var(--speed), transform var(--speed);
+    }
+    .poll-card .poll-option:hover{ transform:translateY(-1px); background:var(--brand); border-color:transparent; color:#fff; }
+    .poll-card .poll-option[disabled]{ opacity:.6; cursor:not-allowed; transform:none; }
+    .poll-card .poll-options.show-results{ gap:10px; }
+    .poll-card .poll-result{
+      padding:12px; border-radius:12px; border:1px solid var(--line); background:var(--surface);
+      display:grid; gap:6px;
+    }
+    .poll-card .poll-result.selected{
+      border-color:var(--brand);
+      box-shadow:0 0 0 1px rgba(14,165,233,0.45);
+    }
+    .poll-card .poll-result-label{ font-weight:600; font-size:14px; }
+    .poll-card .poll-result-bar{
+      position:relative; height:10px; border-radius:999px; background:var(--line);
+      overflow:visible;
+    }
+    .poll-card .poll-result-bar .fill{
+      position:absolute; inset:0; border-radius:inherit; background:var(--brand);
+    }
+    .poll-card .poll-result-bar .value{
+      position:absolute; top:50%; right:10px; transform:translateY(-50%);
+      font-size:12px; font-weight:600; color:var(--text);
+    }
+    .poll-card .poll-result-count{ font-size:12px; color:var(--muted); }
+    .poll-card .poll-footer{ font-size:12px; color:var(--muted); }
+    .poll-card .poll-empty{
+      padding:10px; border-radius:8px; border:1px dashed var(--line); color:var(--muted);
+      text-align:center; font-size:13px;
+    }
+    .post-media-grid .media.file{ display:flex; align-items:center; justify-content:center; padding:12px; background:var(--elev); border:1px solid var(--line); border-radius:10px; font-weight:600; text-align:center; }
+    .feed-placeholder{
+      margin-top:16px; padding:36px 12px; border:1px dashed var(--line); border-radius:12px;
+      display:flex; flex-direction:column; align-items:center; gap:12px; color:var(--muted);
+    }
+    .feed-placeholder .spinner{
+      width:24px; height:24px; border-radius:999px;
+      border:3px solid rgba(255,255,255,.06); border-top-color:var(--brand);
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    /* ===== Right rail ===== */
+    .rrail{ display:none }
+    @media (min-width:1024px){
+      .rrail{ display:flex; flex-direction:column; gap:12px; padding-left:12px }
+    .card{ border:1px solid var(--line); border-radius:12px; background:var(--surface) }
+    .card .head{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between }
+    .card .body{ padding:12px 14px }
+    .trend-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line) }
+    .trend-row:last-child{ border-bottom:0 }
+    .trend-row .rank{ width:28px; text-align:right; font-weight:800; color:#9AA3AE }
+    .trend-row .tinfo{ flex:1; min-width:0 }
+    .trend-row .tname{ font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .trend-row .tmeta{ font-size:12px; color:var(--muted) }
+    .trend-row .go{ padding:6px 8px; border-radius:8px; border:1px solid var(--line); background:var(--elev); display:inline-flex; align-items:center; justify-content:center }
+    .user-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line) }
+    .user-row:last-child{ border-bottom:0 }
+    .user-row .ava{ width:36px; height:36px; border-radius:50%; background:#D1D5DB; display:grid; place-items:center; font-weight:800 }
+    .user-row .uname{ font-weight:800 }
+    .user-row .uhandle{ color:var(--muted); font-size:12px }
+    .user-row .uacts{ margin-left:auto; display:flex; gap:6px; align-items:center }
+    .icon-btn.small{ width:28px; height:28px; font-size:14px }
+      .chip{ font-size:12px; color:var(--muted); padding:2px 8px; border:1px solid var(--line); border-radius:999px }
+      .list-row{ display:flex; align-items:center; gap:10px; padding:8px 0 }
+      .mini-avatar{ width:32px; height:32px; border-radius:8px; background:#D1D5DB }
+      .trend{ color:var(--muted); font-size:13px }
+    }
+
+    /* ===== Mobile Dock ===== */
+    .dock{ display:none }
+    @media (max-width:1023.98px){
+      .dock{
+        display:block;
+        position:fixed; left:0; right:0; bottom:0;
+        z-index:60;
+        height:var(--dock-h);
+        padding-bottom:var(--safe-bottom);
+        border-top:1px solid var(--line);
+        background:rgba(10,11,14,.92);
+        color:var(--muted);
+        box-shadow:0 -10px 26px rgba(0,0,0,.35);
+        backdrop-filter:blur(18px) saturate(160%);
+        -webkit-backdrop-filter:blur(18px) saturate(160%);
+        transform:translateZ(0);
+        transition:transform var(--speed), background var(--speed), border-color var(--speed);
+      }
+      :root[data-theme="light"] .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+      .with-dock-pad{ padding-bottom: calc(var(--dock-h) + var(--safe-bottom) + 12px) }
+      .dock .row{
+        height:var(--dock-h);
+        display:flex;
+        justify-content:space-around;
+        align-items:center;
+        padding:0 12px;
+        gap:4px;
+      }
+      .dock a{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:4px;
+        padding:8px 12px;
+        min-width:56px;
+        border-radius:14px;
+        color:inherit;
+        transition: background var(--speed), color var(--speed), transform var(--speed);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .dock a:active{ transform:scale(.97); }
+      .dock a.active,
+      .dock a:hover{
+        background:var(--elev);
+        transform:translateY(-1px);
+        color:var(--text);
+      }
+      .dock .label{ font-size:11px; color:inherit }
+    }
+    @media (max-width:1023.98px) and (prefers-color-scheme: light){
+      :root:not([data-theme="dark"]) .dock{
+        background:rgba(247,248,250,.9);
+        box-shadow:0 -8px 20px rgba(15,23,42,.12);
+      }
+    }
+
+    /* ===== Footer (고정) ===== */
+    .footer{
+      position:fixed; left:0; right:0; bottom:0; height:var(--footer-h);
+      border-top:1px solid var(--line); background:var(--surface); color:#9AA3AE;
+      z-index:50;
+    }
+    .footer .row{
+      max-width:1920px; margin:0 auto; height:100%;
+      padding:0 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    @media (max-width:1023.98px){ .footer{ display:none } }
+
+    /* ===== Generic modal ===== */
+    .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.45); z-index:120 }
+    .modal.open{ display:flex; animation: fadeUp .16s ease }
+    .panel{ width:min(94vw, 520px); border:1px solid var(--line); border-radius:14px; background:var(--surface); overflow:hidden }
+    .panel .head{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between }
+    .panel .body{ padding:14px }
+    .panel .foot{ padding:12px 14px; border-top:1px solid var(--line); display:flex; gap:8px; justify-content:flex-end }
+    .panel.media-viewer{
+      width:min(94vw, 860px); max-height:90vh; background:var(--surface); display:flex; flex-direction:column;
+    }
+    .panel.media-viewer .viewer-head{
+      padding:10px 12px; border-bottom:1px solid var(--line); display:flex; justify-content:flex-end;
+    }
+    .panel.media-viewer .viewer-body{
+      flex:1; background:#000; display:flex; align-items:center; justify-content:center; padding:12px;
+    }
+    .panel.media-viewer img,
+    .panel.media-viewer video{
+      max-width:100%; max-height:82vh; border-radius:12px; display:block;
+    }
+    .panel.media-viewer video{ background:#000; }
+    .panel.media-viewer .viewer-foot{
+      padding:10px 12px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:8px;
+    }
+    .btn{ padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--elev); color:var(--text) }
+    .btn.primary{ background:var(--brand); border-color:transparent; color:#fff }
+    .btn.danger{ background:#ef4444; border-color:transparent; color:#fff }
+    .notice{ padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--elev); color:var(--text); margin-bottom:10px }
+    .notice-banner{
+      display:flex; align-items:flex-start; gap:12px;
+      border:1px solid var(--line); border-radius:14px; padding:12px 14px;
+      background:var(--surface); transition: background var(--speed), transform var(--speed);
+      text-decoration:none; color:inherit;
+    }
+    .notice-banner.hidden{ display:none !important; }
+    .notice-banner:hover{ background:var(--elev); transform:translateY(-1px); }
+    .notice-banner .icon{
+      width:32px; height:32px; border-radius:50%; border:1px solid var(--line);
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(14,165,233,.18); color:var(--brand); font-size:18px;
+    }
+    .notice-banner .text{ display:flex; flex-direction:column; gap:4px; }
+    .notice-banner .title{ font-weight:700; font-size:15px; }
+    .notice-banner .body{ color:var(--muted); font-size:13px; line-height:1.4; }
+    .panel textarea{ width:100%; min-height:96px; padding:10px 12px; border-radius:10px; resize:vertical; }
+    .pw-field{ margin-top:10px; display:flex; flex-direction:column; gap:6px }
+    .pw-field input{ padding:10px; border-radius:10px; }
+    .action-list{ display:flex; flex-direction:column; gap:8px; }
+    .action-row{
+      width:100%; text-align:left; padding:10px 12px; border-radius:10px;
+      border:1px solid var(--line); background:var(--elev);
+      transition: background var(--speed), border-color var(--speed);
+    }
+    .action-row:hover{ background:var(--line); }
+    .action-row.danger{ border-color:rgba(239,68,68,.35); color:#f87171; }
+
+    /* ===== IG-style Editor (파일 선택 후 이미지 편집) ===== */
+    .editor{ position:fixed; inset:0; display:none; z-index:130; background:rgba(0,0,0,.66) }
+    .editor.open{ display:block }
+    .editor-canvas{ position:absolute; inset:64px 20px 92px 20px; display:grid; place-items:center; }
+    .stage{ position:relative; width:min(90vw, 860px); max-height:70vh; aspect-ratio:1/1; background:#000; border-radius:12px; overflow:hidden; }
+    .crop-area{ position:absolute; inset:0; }
+    .img{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(1); max-width:none; user-select:none; touch-action:none; }
+    .grid{ position:absolute; inset:0; background:
+      linear-gradient(to right, rgba(255,255,255,.18) 1px, transparent 1px) 0 0/ calc(100%/3) 100%,
+      linear-gradient(to bottom, rgba(255,255,255,.18) 1px, transparent 1px) 0 0/ 100% calc(100%/3);
+      pointer-events:none;
+    }
+    .editor-top{ position:absolute; top:12px; left:0; right:0; height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; }
+    .editor-top .btn{ padding:8px 12px; border-radius:10px; border:1px solid #2a2a2a; background:#111; color:#fff }
+    .editor-bottom{ position:absolute; left:0; right:0; bottom:12px; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .chip{ padding:8px 12px; border-radius:999px; border:1px solid #2a2a2a; background:#111; color:#fff; font-size:13px; opacity:.9 }
+    .chip.active{ background:var(--brand); border-color:transparent }
+    .emoji-popover{
+      position:fixed; z-index:150; display:grid; gap:6px; grid-template-columns:repeat(6, 1fr);
+      padding:10px; border-radius:12px; border:1px solid var(--line); background:var(--surface); box-shadow:var(--shadow);
+    }
+    .emoji-popover.hidden{ display:none; }
+    .emoji-popover button{
+      width:36px; height:36px; border-radius:8px; border:1px solid transparent; font-size:20px; background:var(--elev);
+    }
+    .emoji-popover button:hover{ border-color:var(--brand); transform:translateY(-1px); }
+
+    .hidden{ display:none !important }
+    .profile-link{ cursor:pointer }
+  </style>
+
+  <!-- 넓은 폭 강제 오버라이드(중앙 100%) -->
+  <style id="looma-wide-fix">
+    .timeline{ width:100% !important; max-width:none !important; }
+    .container{ max-width:unset !important; width:100% !important; }
+    .timeline .composer, .timeline .post{ width:100% !important; }
+    @media (min-width:1024px) and (max-width:1599.98px){ .main{ grid-template-columns:260px 1fr !important } .rrail{ display:none !important } }
+    @media (min-width:1600px){ .main{ grid-template-columns:260px minmax(1360px, 1fr) 320px !important } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- ===== Mobile Top: [avatar]  [LOOMA]  [bell] ===== -->
+    <div class="m-top" role="navigation" aria-label="상단 바(모바일)">
+      <div class="m-left"><div class="avatar" title="내 프로필"></div></div>
+      <div class="m-center"><div class="brand" aria-label="LOOMA 로고">LOOMA</div></div>
+      <div class="m-right">
+        <a href="notifications.html" aria-label="알림" class="notif-link">
+          <i class="ri-notification-3-line"></i>
+          <span class="notif-badge hidden" data-notif-count></span>
+        </a>
+        <button class="icon-btn" id="btnAuthAction" aria-label="로그인" title="로그인"><i class="ri-login-circle-line"></i></button>
+      </div>
+    </div>
+
+    <!-- ===== Main grid ===== -->
+    <main class="main">
+      <!-- Sidebar (desktop) -->
+      <aside class="sidebar" aria-label="사이드바 내비게이션">
+        <div class="side-head"><div class="side-brand">LOOMA</div></div>
+        <div class="me-card hidden" title="내 계정" id="sidebarSigned">
+          <div class="avatar"></div>
+          <div>
+            <div class="name" id="sidebarName">회원명</div>
+            <div class="id" id="sidebarHandle">@handle</div>
+          </div>
+          <button class="icon-btn" id="btnLogout" aria-label="로그아웃" title="로그아웃"><i class="ri-logout-circle-line"></i></button>
+        </div>
+        <div class="me-card" id="sidebarGuest">
+          <div>
+            <div class="name">Guest</div>
+            <div class="id muted" style="font-size:12px">로그인하고 더 많은 기능을 이용하세요</div>
+          </div>
+          <button class="icon-btn" data-go="login" aria-label="로그인" title="로그인"><i class="ri-login-circle-line"></i></button>
+        </div>
+        <nav class="nav" id="sideNav">
+          <a href="home.html" data-nav><i class="ri-home-5-line icon"></i><span class="label">홈</span></a>
+          <a href="explore.html" data-nav><i class="ri-compass-3-line icon"></i><span class="label">탐색</span></a>
+          <a href="notifications.html" data-nav class="notif-nav"><i class="ri-notification-3-line icon"></i><span class="label">알림</span><span class="notif-badge hidden" data-notif-count></span></a>
+          <a href="messages.html" data-nav><i class="ri-chat-3-line icon"></i><span class="label">메시지</span></a>
+          <a href="profile.html" data-nav><i class="ri-user-3-line icon"></i><span class="label">프로필</span></a>
+          <a href="settings.html" data-nav><i class="ri-settings-3-line icon"></i><span class="label">설정</span></a>
+        </nav>
+      </aside>
+
+      <!-- Timeline column -->
+      <section class="container" id="feedRoot">
+        <div class="timeline with-dock-pad">
+          <a href="notices.html" data-nav class="notice-banner hidden" id="pinnedNotice">
+            <span class="icon" aria-hidden="true"><i class="ri-information-line"></i></span>
+            <span class="text">
+              <span class="title" data-title></span>
+              <span class="body" data-body></span>
+            </span>
+          </a>
+          <!-- Composer (비로그인 차단: data-requires-auth) -->
+          <div class="composer" id="composer" data-requires-auth="true">
+            <div class="avatar lg" aria-hidden="true"></div>
+            <div class="composer-col">
+              <div class="composer-locked hidden" id="composerLock"></div>
+              <textarea id="composerText" placeholder="지금 어떤 생각을 하고 있나요? (로그인 필요)"></textarea>
+
+              <!-- 첨부 미리보기 트레이 -->
+              <div class="attachments" id="attachments" aria-live="polite"></div>
+
+              <div class="toolbar">
+                <div class="tool-left">
+                  <button class="icon-pill" id="btnMedia"><i class="ri-image-add-line"></i><span>미디어</span></button>
+                  <button class="icon-pill" id="btnPoll"><i class="ri-bar-chart-horizontal-line"></i><span>투표</span></button>
+                  <button class="icon-pill" id="btnEmoji"><i class="ri-emotion-line"></i><span>이모지</span></button>
+                </div>
+                <button class="post-btn" id="btnPost">게시</button>
+              </div>
+              <div class="emoji-popover hidden" id="emojiPicker" role="menu" aria-hidden="true">
+                <button type="button" data-emoji="😀">😀</button>
+                <button type="button" data-emoji="😁">😁</button>
+                <button type="button" data-emoji="😂">😂</button>
+                <button type="button" data-emoji="🤣">🤣</button>
+                <button type="button" data-emoji="😊">😊</button>
+                <button type="button" data-emoji="😍">😍</button>
+                <button type="button" data-emoji="😎">😎</button>
+                <button type="button" data-emoji="🤩">🤩</button>
+                <button type="button" data-emoji="😢">😢</button>
+                <button type="button" data-emoji="😡">😡</button>
+                <button type="button" data-emoji="🙏">🙏</button>
+                <button type="button" data-emoji="🔥">🔥</button>
+                <button type="button" data-emoji="✨">✨</button>
+                <button type="button" data-emoji="💡">💡</button>
+                <button type="button" data-emoji="🎉">🎉</button>
+                <button type="button" data-emoji="❤️">❤️</button>
+                <button type="button" data-emoji="👍">👍</button>
+                <button type="button" data-emoji="👏">👏</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="feed-placeholder" id="feedPlaceholder">
+            <div class="spinner" aria-hidden="true"></div>
+            <div class="placeholder-text">피드를 불러오는 중…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right rail (desktop) -->
+      <aside class="rrail" aria-label="오른쪽 영역">
+        <div class="card">
+          <div class="head"><strong>추천 사용자</strong></div>
+          <div class="body" id="suggestionsBody">
+            <div class="notice">Supabase 연결 후 추천 데이터를 불러옵니다.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="head"><strong>트렌드</strong></div>
+          <div class="body" id="trendsBody">
+            <div class="notice">해시태그 통계가 준비되면 여기에 표시됩니다.</div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Footer (고정) -->
+    <footer class="footer" role="contentinfo">
+      <div class="row">
+        <div>© 2025 LOOMA. All rights reserved.</div>
+        <div style="display:flex; gap:12px">
+          <a class="muted" href="terms.html" data-nav>이용 약관</a>
+          <a class="muted" href="privacy.html" data-nav>개인정보 처리방침</a>
+          <a class="muted" href="https://luminarylabs.netlify.app" target="_blank" rel="noopener noreferrer">Luminary Labs 소개</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Mobile bottom dock -->
+    <nav class="dock" role="navigation" aria-label="하단 메뉴(모바일)">
+      <div class="row" id="dockNav">
+        <a href="home.html" data-nav><i class="ri-home-5-line"></i><span class="label">홈</span></a>
+        <a href="explore.html" data-nav><i class="ri-compass-3-line"></i><span class="label">탐색</span></a>
+        <a href="messages.html" data-nav><i class="ri-chat-3-line"></i><span class="label">메시지</span></a>
+        <a href="profile.html" data-nav><i class="ri-user-3-line"></i><span class="label">프로필</span></a>
+        <a href="settings.html" data-nav><i class="ri-settings-3-line"></i><span class="label">설정</span></a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ===== Hidden Inputs & Editors & Modals (동작은 app.js가 담당) ===== -->
+  <!-- 파일 선택 -->
+  <input class="hidden" type="file" id="mediaPicker" accept="image/*,video/*"/>
+
+  <!-- 인스타그램식 이미지 편집 오버레이 -->
+  <div class="editor" id="editor" aria-hidden="true">
+    <div class="editor-top">
+      <button class="btn" id="editorClose">닫기</button>
+      <button class="btn" id="editorDone">완료</button>
+    </div>
+    <div class="editor-canvas">
+      <div class="stage" id="stage">
+        <div class="crop-area">
+          <img id="editImg" class="img" alt="media"/>
+          <div class="grid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="editor-bottom">
+      <button class="chip active" data-r="1/1">1:1</button>
+      <button class="chip" data-r="4/3">4:3</button>
+      <button class="chip" data-r="3/4">3:4</button>
+    </div>
+  </div>
+
+  <!-- 게시 업로드: 로그인 필요 모달 -->
+  <div class="modal" id="modal-login-post" aria-hidden="true" role="dialog" aria-label="로그인 필요">
+    <div class="panel">
+      <div class="head"><strong>로그인이 필요합니다</strong></div>
+      <div class="body">
+        <div class="notice">게시물 업로드는 회원만 가능합니다. 로그인하거나 새로 가입해 주세요.</div>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-login-post">닫기</button>
+        <button class="btn primary" data-go="login">로그인/가입</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 투표 생성 모달 -->
+  <div class="modal" id="modal-poll" aria-hidden="true" role="dialog" aria-label="투표 만들기">
+    <div class="panel">
+      <form id="pollForm">
+        <div class="head"><strong>투표 만들기</strong></div>
+        <div class="body">
+          <label for="pollQuestion" style="font-weight:600">질문</label>
+          <input id="pollQuestion" name="question" type="text" placeholder="예: 어떤 기능이 가장 기대되나요?" required style="padding:10px 12px; border-radius:10px; border:1px solid var(--line);">
+          <div style="display:grid; gap:8px">
+            <label style="font-weight:600">옵션 (최소 2개)</label>
+            <input class="poll-option" data-idx="0" type="text" placeholder="옵션 1" required style="padding:10px 12px; border-radius:10px; border:1px solid var(--line);">
+            <input class="poll-option" data-idx="1" type="text" placeholder="옵션 2" required style="padding:10px 12px; border-radius:10px; border:1px solid var(--line);">
+            <input class="poll-option" data-idx="2" type="text" placeholder="옵션 3 (선택)" style="padding:10px 12px; border-radius:10px; border:1px solid var(--line);">
+            <input class="poll-option" data-idx="3" type="text" placeholder="옵션 4 (선택)" style="padding:10px 12px; border-radius:10px; border:1px solid var(--line);">
+          </div>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" data-close="#modal-poll">취소</button>
+          <button class="btn primary" type="submit">추가</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 미디어 뷰어 모달 -->
+  <div class="modal" id="modal-media-viewer" aria-hidden="true" role="dialog" aria-label="미디어 보기">
+    <div class="panel media-viewer">
+      <div class="viewer-head">
+        <button class="icon-btn" type="button" data-close="#modal-media-viewer" aria-label="닫기"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="viewer-body">
+        <img id="viewerImage" alt="첨부 이미지" style="display:none"/>
+        <video id="viewerVideo" controls playsinline style="display:none"></video>
+      </div>
+      <div class="viewer-foot">
+        <button class="btn" type="button" data-close="#modal-media-viewer">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 게스트 댓글 모달: 위쪽 로그인 권유 독 + 아래 4자리 비밀번호 입력 -->
+  <div class="modal" id="modal-guest-comment" aria-hidden="true" role="dialog" aria-label="게스트 댓글">
+    <div class="panel">
+      <div class="head"><strong>댓글 작성</strong></div>
+      <div class="body">
+        <div class="notice">회원이라면 더 편리합니다. 로그인하면 다회 댓글, 알림, 기록 관리가 가능해요.</div>
+        <div id="guestCommentState" class="muted" style="font-size:12px; margin-bottom:6px;">비로그인 사용자는 최대 1회까지 댓글 작성 가능</div>
+        <label for="guestPw" style="display:block; margin-bottom:6px;">임시 비밀번호(4자리 숫자)</label>
+        <input id="guestPw" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="예: 1234" style="width:100%; padding:10px; border-radius:10px"/>
+      </div>
+      <div class="foot">
+        <button class="btn" data-close="#modal-guest-comment">취소</button>
+        <button class="btn primary" id="guestCommentConfirm">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 댓글 수정 모달 -->
+  <div class="modal" id="modal-comment-edit" aria-hidden="true" role="dialog" aria-label="댓글 수정">
+    <div class="panel">
+      <form id="commentEditForm">
+        <div class="head"><strong>댓글 수정</strong></div>
+        <div class="body">
+          <label for="commentEditText" class="muted" style="display:block; margin-bottom:6px;">내용</label>
+          <textarea id="commentEditText" name="text" placeholder="수정할 내용을 입력하세요" required></textarea>
+          <div id="commentEditPwRow" class="pw-field hidden">
+            <label for="commentEditPw">댓글 비밀번호 (4자리)</label>
+            <input id="commentEditPw" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="예: 1234"/>
+          </div>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" data-close="#modal-comment-edit">취소</button>
+          <button class="btn primary" type="submit">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 댓글 삭제 모달 -->
+  <div class="modal" id="modal-comment-delete" aria-hidden="true" role="dialog" aria-label="댓글 삭제">
+    <div class="panel">
+      <form id="commentDeleteForm">
+        <div class="head"><strong>댓글 삭제</strong></div>
+        <div class="body">
+          <div class="notice">정말 삭제할까요? 삭제하면 되돌릴 수 없습니다.</div>
+          <div id="commentDeletePwRow" class="pw-field hidden">
+            <label for="commentDeletePw">댓글 비밀번호 (4자리)</label>
+            <input id="commentDeletePw" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="예: 1234"/>
+          </div>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" data-close="#modal-comment-delete">취소</button>
+          <button class="btn danger" type="submit">삭제</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 게시물 옵션 모달 -->
+  <div class="modal" id="modal-post-actions" aria-hidden="true" role="dialog" aria-label="게시물 옵션">
+    <div class="panel">
+      <div class="head"><strong>게시물 옵션</strong></div>
+      <div class="body">
+        <div class="action-list" id="postActionsList">
+          <button class="action-row" data-post-action="copy-link" type="button">링크 복사</button>
+          <button class="action-row" data-post-action="share" type="button">공유하기</button>
+          <button class="action-row danger" data-post-action="report" type="button">신고하기</button>
+          <button class="action-row hidden" data-owner-only="true" data-post-action="edit" type="button">게시물 수정</button>
+          <button class="action-row danger hidden" data-owner-only="true" data-post-action="delete" type="button">게시물 삭제</button>
+        </div>
+      </div>
+      <div class="foot">
+        <button class="btn" type="button" data-close="#modal-post-actions">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 게시물 수정 모달 -->
+  <div class="modal" id="modal-post-edit" aria-hidden="true" role="dialog" aria-label="게시물 수정">
+    <div class="panel">
+      <form id="postEditForm">
+        <div class="head"><strong>게시물 수정</strong></div>
+        <div class="body">
+          <textarea id="postEditText" rows="5" placeholder="게시물 내용을 입력하세요"></textarea>
+          <div class="notice">텍스트만 수정할 수 있습니다. 첨부 파일을 변경하려면 새 게시물을 작성해 주세요.</div>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" data-close="#modal-post-edit">취소</button>
+          <button class="btn primary" type="submit">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 게시물 삭제 모달 -->
+  <div class="modal" id="modal-post-delete" aria-hidden="true" role="dialog" aria-label="게시물 삭제">
+    <div class="panel">
+      <form id="postDeleteForm">
+        <div class="head"><strong>게시물 삭제</strong></div>
+        <div class="body">
+          <div class="notice">정말 삭제하시겠어요? 삭제 후에는 되돌릴 수 없습니다.</div>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" data-close="#modal-post-delete">취소</button>
+          <button class="btn danger" type="submit">삭제</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 게시물 신고 모달 -->
+  <div class="modal" id="modal-report" aria-hidden="true" role="dialog" aria-label="게시물 신고">
+    <div class="panel">
+      <form id="reportForm">
+        <div class="head"><strong>게시물 신고</strong></div>
+        <div class="body">
+          <label for="reportReason" style="display:block; margin-bottom:6px;">신고 사유</label>
+          <div class="looma-select" data-looma-select data-target="reportReason" data-placeholder="사유를 선택하세요">
+            <button class="trigger" data-select-trigger>
+              <span data-select-label>사유를 선택하세요</span>
+              <i class="ri-arrow-down-s-line"></i>
+            </button>
+            <div class="options" role="listbox">
+              <button class="option" data-select-option data-value="spam">스팸 · 광고</button>
+              <button class="option" data-select-option data-value="inappropriate">부적절한 콘텐츠</button>
+              <button class="option" data-select-option data-value="abuse">혐오 · 폭력 · 괴롭힘</button>
+              <button class="option" data-select-option data-value="other">기타 (직접 입력)</button>
+            </div>
+          </div>
+          <input type="hidden" id="reportReason" value="">
+          <label for="reportDetail" class="muted" style="display:block; margin:12px 0 6px;">추가 설명 (선택)</label>
+          <textarea id="reportDetail" rows="3" placeholder="상세 내용을 입력해 주세요" style="width:100%; resize:vertical;"></textarea>
+          <div class="notice">신고 내용은 추후 superadmin 페이지에서 관리자가 검토합니다.</div>
+        </div>
+        <div class="foot">
+          <button class="btn" type="button" data-close="#modal-report">취소</button>
+          <button class="btn danger" type="submit">신고 제출</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 전역 알림/토스트 컨테이너 (선택) -->
+  <div id="toastRoot" style="position:fixed; right:12px; bottom:calc(var(--footer-h) + 12px); z-index:140"></div>
+
+  <!-- 앱 스크립트 -->
+  <script src="looma-select.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
