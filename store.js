@@ -815,6 +815,11 @@ function createFileStore({ dbPath, uid, sha256 }) {
   }
 
   async function ensureReady() {
+    const mode = String(process.env.LOOMA_DATA_MODE || process.env.LOOMA_STORE_MODE || '').toLowerCase();
+    if (mode === 'supabase') {
+      return; // In Supabase mode, do not attempt to access the local file system.
+    }
+
     try {
       await fsp.mkdir(path.dirname(dbPath), { recursive: true });
     } catch {
